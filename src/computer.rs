@@ -4,6 +4,7 @@ mod flag;
 mod port;
 mod memory;
 
+use ux::{u4, u6};
 use crate::computer::alu::ArithmeticLogicUnit;
 use crate::computer::flag::Flag;
 use crate::computer::memory::readonly::ReadOnlyMemory;
@@ -14,11 +15,11 @@ use crate::computer::register::Register;
 pub struct Computer {
     alu: ArithmeticLogicUnit,
 
-    accumulator: Register<4>,
-    x_register: Register<4>,
-    y_register: Register<4>,
-    z_register: Register<4>,
-    program_counter: Register<6>,
+    accumulator: Register<u4>,
+    x_register: Register<u4>,
+    y_register: Register<u4>,
+    z_register: Register<u4>,
+    program_counter: Register<u6>,
 
     status_flag: Flag,
 
@@ -29,5 +30,4 @@ pub struct Computer {
 }
 
 impl Computer {
-
 }
