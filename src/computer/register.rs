@@ -1,10 +1,10 @@
 extern crate ux;
 
-pub struct Register<T: Into<u64> + Default> { // Allows any unsigned integer type
+pub struct Register<T> {
     pub value: T
 }
 
-impl<T: Into<u64> + Default> Register<T> {
+impl<T: Default + Copy> Register<T> {
     pub fn new() -> Self {
         Register { value: T::default() }
     }
