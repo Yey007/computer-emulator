@@ -2,9 +2,9 @@ pub struct ReadWriteMemory<T, const N: usize> {
     memory: [T; N],
 }
 
-impl<T: Copy, const N: usize> ReadWriteMemory<T, N> {
+impl<T: Copy + Default, const N: usize> ReadWriteMemory<T, N> {
     pub fn new() -> Self {
-       ReadWriteMemory { memory: [N] }
+       ReadWriteMemory { memory: [T::default(); N] }
     }
 
     pub fn read(&self, location: usize) -> T {

@@ -1,17 +1,17 @@
-mod register;
 mod alu;
-mod port;
 mod memory;
+mod port;
+mod register;
 
-use ux::{u4, u6};
 use crate::computer::alu::ArithmeticLogicUnit;
 use crate::computer::memory::readonly::ReadOnlyMemory;
 use crate::computer::memory::readwrite::ReadWriteMemory;
 use crate::computer::port::Port;
 use crate::computer::register::Register;
+use ux::{u4, u6};
 
-const PROGRAM_MEMORY_SIZE: usize = 2_usize.pow(6);
-const WORKING_MEMORY_SIZE: usize = 2_usize.pow(8);
+pub const PROGRAM_MEMORY_SIZE: usize = 2_usize.pow(6);
+pub const WORKING_MEMORY_SIZE: usize = 2_usize.pow(8);
 
 pub struct Computer {
     alu: ArithmeticLogicUnit,
@@ -40,7 +40,7 @@ impl Computer {
             status_flag: false,
             ports: [Port::new(), Port::new(), Port::new(), Port::new()],
             program_memory: ReadOnlyMemory::with_values(program),
-            working_memory: ReadWriteMemory::new()
+            working_memory: ReadWriteMemory::new(),
         }
     }
 }
