@@ -1,7 +1,7 @@
 use crate::computer::{Computer, PROGRAM_MEMORY_SIZE};
-use std::fs::{read, File};
+use std::fs::File;
 use std::io;
-use std::io::{Error, Read};
+use std::io::Read;
 use std::path::Path;
 
 mod computer;
