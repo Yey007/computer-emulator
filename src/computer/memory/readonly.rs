@@ -1,13 +1,13 @@
-pub struct ReadOnlyMemory<T, const N: usize> {
-   memory: [T; N]
+pub struct ReadOnlyMemory<T, TAddr, const N: usize> {
+    memory: [T; N],
 }
 
-impl<T: Copy, const N: usize> ReadOnlyMemory<T, N> {
+impl<T: Copy, TAddr: Into<usize>, const N: usize> ReadOnlyMemory<T, TAddr, N> {
     pub fn with_values(values: [T; N]) -> Self {
-       ReadOnlyMemory { memory: values }
+        ReadOnlyMemory { memory: values }
     }
 
-    pub fn read(&self, location: usize) -> T {
-       self.memory[location]
+    pub fn read(&self, location: TAddr) -> T {
+        self.memory[location]
     }
 }

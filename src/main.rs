@@ -17,4 +17,5 @@ fn load_program_from_file(path: &Path) -> Result<[u8; PROGRAM_MEMORY_SIZE], io::
 fn main() {
     let program = load_program_from_file(Path::new("./programs/program")).unwrap();
     let computer = Computer::with_program(program);
+    computer.run()
 }
