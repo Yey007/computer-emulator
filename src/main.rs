@@ -1,3 +1,4 @@
+#![feature(associated_type_bounds)]
 use crate::computer::{Computer, PROGRAM_MEMORY_SIZE};
 use std::fs::File;
 use std::io;
@@ -6,7 +7,6 @@ use std::path::Path;
 
 mod computer;
 mod instruction;
-mod ux_extensions;
 
 fn load_program_from_file(path: &Path) -> Result<[u8; PROGRAM_MEMORY_SIZE], io::Error> {
     let mut f = File::open(path)?;
@@ -16,7 +16,18 @@ fn load_program_from_file(path: &Path) -> Result<[u8; PROGRAM_MEMORY_SIZE], io::
 }
 
 fn main() {
-    let program = load_program_from_file(Path::new("./programs/program")).unwrap();
-    let computer = Computer::with_program(program);
+    // let program = load_program_from_file(Path::new("./programs/program")).unwrap();
+    let mut computer = Computer::with_program([
+        0b11000001, 0b11010001, 0b00010101, 0b00000000, 0b0000000, 0b00000000, 0b00000000,
+        0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
+        0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
+        0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
+        0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
+        0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
+        0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
+        0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
+        0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
+        0b00000000,
+    ]);
     computer.run()
 }

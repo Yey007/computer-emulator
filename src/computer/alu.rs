@@ -2,8 +2,10 @@ use crate::computer::register::Register;
 use std::borrow::{Borrow, BorrowMut};
 use ux::u4;
 
+type RegisterType = u4;
+
 pub struct ArithmeticLogicUnit {
-    accumulator: Register<u4>,
+    accumulator: Register<RegisterType>,
 }
 
 impl ArithmeticLogicUnit {
@@ -13,45 +15,45 @@ impl ArithmeticLogicUnit {
         }
     }
 
-    pub fn accumulator(&self) -> &Register<u4> {
+    pub fn accumulator(&self) -> &Register<RegisterType> {
         self.accumulator.borrow()
     }
 
-    pub fn accumulator_mut(&mut self) -> &mut Register<u4> {
+    pub fn accumulator_mut(&mut self) -> &mut Register<RegisterType> {
         self.accumulator.borrow_mut()
     }
 
-    pub fn add(&mut self, value: u4) {
+    pub fn add(&mut self, value: RegisterType) {
         let current = self.accumulator.load();
         self.accumulator.store(current + value)
     }
 
-    pub fn sub(&mut self, value: u4) {
+    pub fn sub(&mut self, value: RegisterType) {
         let current = self.accumulator.load();
         self.accumulator.store(current - value)
     }
 
-    pub fn bor(&mut self, value: u4) {
+    pub fn bor(&mut self, value: RegisterType) {
         let current = self.accumulator.load();
         self.accumulator.store(current | value)
     }
 
-    pub fn and(&mut self, value: u4) {
+    pub fn and(&mut self, value: RegisterType) {
         let current = self.accumulator.load();
         self.accumulator.store(current & value)
     }
 
-    pub fn cmp(&self, value: u4) -> bool {
+    pub fn cmp(&self, value: RegisterType) -> bool {
         let current = self.accumulator.load();
         current == value
     }
 
-    pub fn grt(&self, value: u4) -> bool {
+    pub fn grt(&self, value: RegisterType) -> bool {
         let current = self.accumulator.load();
         current > value
     }
 
-    pub fn les(&self, value: u4) -> bool {
+    pub fn les(&self, value: RegisterType) -> bool {
         let current = self.accumulator.load();
         current < value
     }

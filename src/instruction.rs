@@ -1,7 +1,7 @@
 use bitmatch::bitmatch;
 use ux::{u2, u4, u6};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Instruction {
     NOP,
     STR { register_id: u2 },
@@ -78,5 +78,47 @@ pub fn decode_instruction(binary: u8) -> Instruction {
         "00111000" => Instruction::SSF,
         "00111100" => Instruction::RSF,
         _ => Instruction::NOP,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn no_operands() {
+        assert_eq!(decode_instruction(0b00111000), Instruction::SSF)
+    }
+
+    #[test]
+    fn register_operand() {
+        assert_eq!(
+            decode_instruction(0b00000111),
+            Instruction::STR {
+                register_id: u2::new(0b11)
+            }
+        )
+    }
+
+    #[test]
+    fn register_and_port_operands() {
+        assert_eq!(
+            decode_instruction(0b01001101),
+            Instruction::INP {
+                register_id: u2::new(0b11),
+                port_id: u2::new(0b01)
+            }
+        )
+    }
+
+    #[test]
+    fn register_and_immediate_operands() {
+        assert_eq!(
+            decode_instruction(0b11001100),
+            Instruction::LDI {
+                register_id: u2::new(0b00),
+                immediate: u4::new(0b1100)
+            }
+        )
     }
 }

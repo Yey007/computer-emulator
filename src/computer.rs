@@ -51,7 +51,7 @@ impl Computer {
             let inst_bits = self.fetch();
             let inst = self.decode(inst_bits);
             self.execute(inst);
-            self.program_counter.increment()
+            self.program_counter.increment();
         }
     }
 
@@ -146,12 +146,12 @@ impl Computer {
 
     fn get_register(&self, id: u2) -> &Register<u4> {
         let id_u8: u8 = id.into();
-        match id_u8 as usize {
+        match id_u8 {
             0 => self.alu.accumulator(),
             1 => self.x_register.borrow(),
             2 => self.y_register.borrow(),
             3 => self.z_register.borrow(),
-            _ => panic!("I'm sorry, what? Max value of u2 exceeded."),
+            _ => panic!("Max value of u2 exceeded."),
         }
     }
 
@@ -162,12 +162,12 @@ impl Computer {
 
     fn get_register_mut(&mut self, id: u2) -> &mut Register<u4> {
         let id_u8: u8 = id.into();
-        match id_u8 as usize {
+        match id_u8 {
             0 => self.alu.accumulator_mut(),
             1 => self.x_register.borrow_mut(),
             2 => self.y_register.borrow_mut(),
             3 => self.z_register.borrow_mut(),
-            _ => panic!("I'm sorry, what? Max value of u2 exceeded."),
+            _ => panic!("Max value of u2 exceeded."),
         }
     }
 
