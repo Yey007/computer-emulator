@@ -58,3 +58,100 @@ impl ArithmeticLogicUnit {
         current < value
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn initialize_alu() -> ArithmeticLogicUnit {
+        let mut alu = ArithmeticLogicUnit::new();
+        alu.accumulator.borrow_mut().store(RegisterType::new(5));
+        alu
+    }
+
+    #[test]
+    fn add() {
+        let mut alu = initialize_alu();
+        alu.add(RegisterType::new(4));
+        assert_eq!(alu.accumulator.borrow().load(), RegisterType::new(9))
+    }
+
+    #[test]
+    fn sub() {
+        let mut alu = initialize_alu();
+        alu.sub(RegisterType::new(4));
+        assert_eq!(alu.accumulator.borrow().load(), RegisterType::new(1))
+    }
+
+    #[test]
+    fn bor() {
+        let mut alu = initialize_alu();
+        // 5 is 0b101
+        alu.bor(RegisterType::new(0b011));
+        assert_eq!(alu.accumulator.borrow().load(), RegisterType::new(0b111))
+    }
+
+    #[test]
+    fn and() {
+        let mut alu = initialize_alu();
+        // 5 is 0b101
+        alu.and(RegisterType::new(0b011));
+        assert_eq!(alu.accumulator.borrow().load(), RegisterType::new(0b001))
+    }
+
+    #[test]
+    fn cmp_equal() {
+        let alu = initialize_alu();
+        let result = alu.cmp(RegisterType::new(5));
+        assert_eq!(result, true)
+    }
+
+    #[test]
+    fn cmp_not_equal() {
+        let alu = initialize_alu();
+        let result = alu.cmp(RegisterType::new(4));
+        assert_eq!(result, false)
+    }
+
+    #[test]
+    fn grt_equal() {
+        let alu = initialize_alu();
+        let result = alu.les(RegisterType::new(5));
+        assert_eq!(result, false)
+    }
+
+    #[test]
+    fn grt_less() {
+        let alu = initialize_alu();
+        let result = alu.les(RegisterType::new(4));
+        assert_eq!(result, false)
+    }
+
+    #[test]
+    fn grt_greater() {
+        let alu = initialize_alu();
+        let result = alu.les(RegisterType::new(6));
+        assert_eq!(result, true)
+    }
+
+    #[test]
+    fn les_equal() {
+        let alu = initialize_alu();
+        let result = alu.les(RegisterType::new(5));
+        assert_eq!(result, false)
+    }
+
+    #[test]
+    fn les_less() {
+        let alu = initialize_alu();
+        let result = alu.les(RegisterType::new(6));
+        assert_eq!(result, true)
+    }
+
+    #[test]
+    fn les_greater() {
+        let alu = initialize_alu();
+        let result = alu.les(RegisterType::new(4));
+        assert_eq!(result, false)
+    }
+}
