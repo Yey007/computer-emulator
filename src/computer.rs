@@ -9,30 +9,30 @@ use crate::computer::memory::readwrite::ReadWriteMemory;
 use crate::computer::port::Port;
 use crate::computer::register::Register;
 use crate::instruction::{decode_instruction, Instruction};
+use crate::types::{
+    InstructionBitType, PortIndexType, ProgramCounterType, RegisterIndexType, WorkingType,
+    PORTS_SIZE, PROGRAM_MEMORY_SIZE, WORKING_MEMORY_SIZE,
+};
 use std::borrow::{Borrow, BorrowMut};
-use ux::{u2, u4, u6};
-
-pub const PROGRAM_MEMORY_SIZE: usize = 2_usize.pow(6);
-pub const WORKING_MEMORY_SIZE: usize = 2_usize.pow(8);
 
 pub struct Computer {
     alu: ArithmeticLogicUnit,
 
-    x_register: Register<u4>,
-    y_register: Register<u4>,
-    z_register: Register<u4>,
-    program_counter: Register<u6>,
+    x_register: Register<WorkingType>,
+    y_register: Register<WorkingType>,
+    z_register: Register<WorkingType>,
+    program_counter: Register<ProgramCounterType>,
 
     status_flag: bool,
 
-    ports: [Port<u4>; 4],
+    ports: [Port<WorkingType>; PORTS_SIZE],
 
-    program_memory: ReadOnlyMemory<u8, PROGRAM_MEMORY_SIZE>,
-    working_memory: ReadWriteMemory<u4, WORKING_MEMORY_SIZE>,
+    program_memory: ReadOnlyMemory<InstructionBitType, PROGRAM_MEMORY_SIZE>,
+    working_memory: ReadWriteMemory<WorkingType, WORKING_MEMORY_SIZE>,
 }
 
 impl Computer {
-    pub fn with_program(program: [u8; PROGRAM_MEMORY_SIZE]) -> Self {
+    pub fn with_program(program: [InstructionBitType; PROGRAM_MEMORY_SIZE]) -> Self {
         Computer {
             alu: ArithmeticLogicUnit::new(),
             x_register: Register::new(),
@@ -55,12 +55,12 @@ impl Computer {
         }
     }
 
-    fn fetch(&self) -> u8 {
+    fn fetch(&self) -> InstructionBitType {
         let addr = self.program_counter.load();
         self.program_memory.read(addr)
     }
 
-    fn decode(&self, instruction: u8) -> Instruction {
+    fn decode(&self, instruction: InstructionBitType) -> Instruction {
         decode_instruction(instruction)
     }
 
@@ -94,21 +94,23 @@ impl Computer {
                 let register = self.get_register_mut(register_id);
                 register.decrement()
             }
-            Instruction::INP {
-                register_id,
-                port_id,
+            Instruction::MOV {
+                register_to_id,
+                register_from_id,
             } => {
-                let value = self.get_port(port_id).read();
-                let register = self.get_register_mut(register_id);
-                register.store(value)
+                let register_to = self.get_register(register_to_id);
+                let value = register_to.load();
+                let register_from = self.get_register_mut(register_from_id);
+                register_from.store(value)
             }
-            Instruction::OUT {
-                register_id,
-                port_id,
-            } => {
-                let value = self.get_register(register_id).load();
+            Instruction::INP { port_id } => {
+                let value = self.get_port(port_id).read();
+                self.z_register.store(value)
+            }
+            Instruction::OUT { port_id } => {
+                let val = self.z_register.load();
                 let port = self.get_port_mut(port_id);
-                port.write(value)
+                port.write(val)
             }
             Instruction::ADD { register_id } => {
                 let value = self.get_register(register_id).load();
@@ -144,7 +146,7 @@ impl Computer {
         }
     }
 
-    fn get_register(&self, id: u2) -> &Register<u4> {
+    fn get_register(&self, id: RegisterIndexType) -> &Register<WorkingType> {
         let id_u8: u8 = id.into();
         match id_u8 {
             0 => self.alu.accumulator(),
@@ -155,12 +157,12 @@ impl Computer {
         }
     }
 
-    fn get_port(&self, id: u2) -> &Port<u4> {
+    fn get_port(&self, id: PortIndexType) -> &Port<WorkingType> {
         let id_u8: u8 = id.into();
         self.ports[id_u8 as usize].borrow()
     }
 
-    fn get_register_mut(&mut self, id: u2) -> &mut Register<u4> {
+    fn get_register_mut(&mut self, id: RegisterIndexType) -> &mut Register<WorkingType> {
         let id_u8: u8 = id.into();
         match id_u8 {
             0 => self.alu.accumulator_mut(),
@@ -171,7 +173,7 @@ impl Computer {
         }
     }
 
-    fn get_port_mut(&mut self, id: u2) -> &mut Port<u4> {
+    fn get_port_mut(&mut self, id: RegisterIndexType) -> &mut Port<WorkingType> {
         let id_u8: u8 = id.into();
         self.ports[id_u8 as usize].borrow_mut()
     }

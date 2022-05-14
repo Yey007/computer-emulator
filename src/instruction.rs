@@ -1,79 +1,116 @@
+use crate::types::{InstructionBitType, ProgramCounterType, RegisterIndexType, WorkingType};
 use bitmatch::bitmatch;
-use ux::{u2, u4, u6};
 
 #[derive(Debug, PartialEq)]
 pub enum Instruction {
     NOP,
-    STR { register_id: u2 },
-    LOD { register_id: u2 },
-    LDI { register_id: u2, immediate: u4 },
-    INC { register_id: u2 },
-    DEC { register_id: u2 },
-    INP { register_id: u2, port_id: u2 },
-    OUT { register_id: u2, port_id: u2 },
-    ADD { register_id: u2 },
-    SUB { register_id: u2 },
-    BOR { register_id: u2 },
-    AND { register_id: u2 },
-    CMP { register_id: u2 },
-    GRT { register_id: u2 },
-    LES { register_id: u2 },
-    BRN { immediate: u6 },
+    STR {
+        register_id: RegisterIndexType,
+    },
+    LOD {
+        register_id: RegisterIndexType,
+    },
+    LDI {
+        register_id: RegisterIndexType,
+        immediate: WorkingType,
+    },
+    INC {
+        register_id: RegisterIndexType,
+    },
+    DEC {
+        register_id: RegisterIndexType,
+    },
+    MOV {
+        register_from_id: RegisterIndexType,
+        register_to_id: RegisterIndexType,
+    },
+    INP {
+        port_id: RegisterIndexType,
+    },
+    OUT {
+        port_id: RegisterIndexType,
+    },
+    ADD {
+        register_id: RegisterIndexType,
+    },
+    SUB {
+        register_id: RegisterIndexType,
+    },
+    BOR {
+        register_id: RegisterIndexType,
+    },
+    AND {
+        register_id: RegisterIndexType,
+    },
+    CMP {
+        register_id: RegisterIndexType,
+    },
+    GRT {
+        register_id: RegisterIndexType,
+    },
+    LES {
+        register_id: RegisterIndexType,
+    },
+    BRN {
+        immediate: ProgramCounterType,
+    },
     SSF,
     RSF,
 }
 
 #[bitmatch]
-pub fn decode_instruction(binary: u8) -> Instruction {
+pub fn decode_instruction(binary: InstructionBitType) -> Instruction {
     #[bitmatch]
     match binary {
         "000001rr" => Instruction::STR {
-            register_id: u2::new(r),
+            register_id: RegisterIndexType::new(r),
         },
         "000010rr" => Instruction::LOD {
-            register_id: u2::new(r),
+            register_id: RegisterIndexType::new(r),
         },
         "11rrxxxx" => Instruction::LDI {
-            register_id: u2::new(r),
-            immediate: u4::new(x),
+            register_id: RegisterIndexType::new(r),
+            immediate: WorkingType::new(x),
         },
         "000011rr" => Instruction::INC {
-            register_id: u2::new(r),
+            register_id: RegisterIndexType::new(r),
         },
         "000100rr" => Instruction::DEC {
-            register_id: u2::new(r),
+            register_id: RegisterIndexType::new(r),
         },
-        "0100rrpp" => Instruction::INP {
-            register_id: u2::new(r),
-            port_id: u2::new(p),
+        "0111rrkk" => Instruction::MOV {
+            register_from_id: RegisterIndexType::new(r),
+            register_to_id: RegisterIndexType::new(k),
         },
-        "0101rrpp" => Instruction::OUT {
-            register_id: u2::new(r),
-            port_id: u2::new(p),
+        "010000pp" => Instruction::INP {
+            port_id: RegisterIndexType::new(p),
+        },
+        "010001pp" => Instruction::OUT {
+            port_id: RegisterIndexType::new(p),
         },
         "000101rr" => Instruction::ADD {
-            register_id: u2::new(r),
+            register_id: RegisterIndexType::new(r),
         },
         "000110rr" => Instruction::SUB {
-            register_id: u2::new(r),
+            register_id: RegisterIndexType::new(r),
         },
         "001000rr" => Instruction::BOR {
-            register_id: u2::new(r),
+            register_id: RegisterIndexType::new(r),
         },
         "001001rr" => Instruction::AND {
-            register_id: u2::new(r),
+            register_id: RegisterIndexType::new(r),
         },
         "001011rr" => Instruction::CMP {
-            register_id: u2::new(r),
+            register_id: RegisterIndexType::new(r),
         },
         "001100rr" => Instruction::GRT {
-            register_id: u2::new(r),
+            register_id: RegisterIndexType::new(r),
         },
         "001101rr" => Instruction::LES {
-            register_id: u2::new(r),
+            register_id: RegisterIndexType::new(r),
         },
         "10xxxxxx" => Instruction::BRN {
-            immediate: u6::new(x),
+            immediate: ProgramCounterType::new(x),
         },
         "00111000" => Instruction::SSF,
         "00111100" => Instruction::RSF,
@@ -95,18 +132,18 @@ mod tests {
         assert_eq!(
             decode_instruction(0b00000111),
             Instruction::STR {
-                register_id: u2::new(0b11)
+                register_id: RegisterIndexType::new(0b11)
             }
         )
     }
 
     #[test]
-    fn register_and_port_operands() {
+    fn two_register_operands() {
         assert_eq!(
-            decode_instruction(0b01001101),
-            Instruction::INP {
-                register_id: u2::new(0b11),
-                port_id: u2::new(0b01)
+            decode_instruction(0b1110110),
+            Instruction::MOV {
+                register_from_id: RegisterIndexType::new(0b01),
+                register_to_id: RegisterIndexType::new(0b10)
             }
         )
     }
@@ -116,8 +153,8 @@ mod tests {
         assert_eq!(
             decode_instruction(0b11001100),
             Instruction::LDI {
-                register_id: u2::new(0b00),
-                immediate: u4::new(0b1100)
+                register_id: RegisterIndexType::new(0b00),
+                immediate: WorkingType::new(0b1100)
             }
         )
     }

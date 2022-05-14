@@ -7,8 +7,6 @@ pub struct Register<T> {
 
 impl<T: Copy + From<u2> + Add<Output = T> + Sub<Output = T>> Register<T> {
     pub fn new() -> Self {
-        // Unwrapping here is okay. These will only panic if something has gone terribly
-        // wrong in the ux library, at which point it's acceptable to panic.
         Register {
             value: T::try_from(u2::new(0)).unwrap(),
         }
