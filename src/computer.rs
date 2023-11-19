@@ -1,19 +1,17 @@
 mod alu;
 mod memory;
-mod port;
 mod register;
 
 use crate::computer::alu::ArithmeticLogicUnit;
 use crate::computer::memory::readonly::ReadOnlyMemory;
 use crate::computer::memory::readwrite::ReadWriteMemory;
-use crate::computer::port::Port;
+use crate::port::device_port::DevicePort;
 use crate::computer::register::Register;
 use crate::instruction::{decode_instruction, Instruction};
-use crate::types::{
-    InstructionBitType, PortIndexType, ProgramCounterType, RegisterIndexType, WorkingType,
-    PORTS_SIZE, PROGRAM_MEMORY_SIZE, WORKING_MEMORY_SIZE,
-};
-use std::borrow::{Borrow, BorrowMut};
+use crate::types::{InstructionBitType, PinIndex, PINS_SIZE, PortIndex, PORT_BITS, PORTS_SIZE, PROGRAM_MEMORY_SIZE, ProgramCounterType, RegisterIndex, WORKING_MEMORY_SIZE, WorkingType};
+use std::borrow::{BorrowMut};
+use crate::port::device_pin::DevicePin;
+use crate::port::Port;
 
 pub struct Computer {
     alu: ArithmeticLogicUnit,
@@ -25,7 +23,8 @@ pub struct Computer {
 
     status_flag: bool,
 
-    ports: [Port<WorkingType>; PORTS_SIZE],
+    ports: [DevicePort<PORT_BITS>; PORTS_SIZE],
+    pins: [DevicePin; PINS_SIZE],
 
     program_memory: ReadOnlyMemory<InstructionBitType, PROGRAM_MEMORY_SIZE>,
     working_memory: ReadWriteMemory<WorkingType, WORKING_MEMORY_SIZE>,
@@ -40,7 +39,11 @@ impl Computer {
             z_register: Register::new(),
             program_counter: Register::new(),
             status_flag: false,
-            ports: [Port::new(), Port::new(), Port::new(), Port::new()],
+            ports: [DevicePort::new(), DevicePort::new(), DevicePort::new(), DevicePort::new()],
+            pins: [
+                DevicePin::new(), DevicePin::new(), DevicePin::new(), DevicePin::new(),
+                DevicePin::new(), DevicePin::new(), DevicePin::new(), DevicePin::new()
+            ],
             program_memory: ReadOnlyMemory::with_values(program),
             working_memory: ReadWriteMemory::new(),
         }
@@ -76,22 +79,22 @@ impl Computer {
             Instruction::LOD { register_id } => {
                 let addr = self.decode_xy();
                 let value = self.working_memory.read(addr);
-                let register = self.get_register_mut(register_id);
+                let register = self.get_register(register_id);
                 register.store(value)
             }
             Instruction::LDI {
                 register_id,
                 immediate,
             } => {
-                let register = self.get_register_mut(register_id);
+                let register = self.get_register(register_id);
                 register.store(immediate)
             }
             Instruction::INC { register_id } => {
-                let register = self.get_register_mut(register_id);
+                let register = self.get_register(register_id);
                 register.increment()
             }
             Instruction::DEC { register_id } => {
-                let register = self.get_register_mut(register_id);
+                let register = self.get_register(register_id);
                 register.decrement()
             }
             Instruction::MOV {
@@ -100,7 +103,7 @@ impl Computer {
             } => {
                 let register_to = self.get_register(register_to_id);
                 let value = register_to.load();
-                let register_from = self.get_register_mut(register_from_id);
+                let register_from = self.get_register(register_from_id);
                 register_from.store(value)
             }
             Instruction::INP { port_id } => {
@@ -109,9 +112,11 @@ impl Computer {
             }
             Instruction::OUT { port_id } => {
                 let val = self.z_register.load();
-                let port = self.get_port_mut(port_id);
+                let port = self.get_port(port_id);
                 port.write(val)
             }
+            Instruction::SEP { pin_id } => self.get_pin(pin_id).write(true),
+            Instruction::RSP { pin_id } => self.get_pin(pin_id).write(false),
             Instruction::ADD { register_id } => {
                 let value = self.get_register(register_id).load();
                 self.alu.add(value)
@@ -146,23 +151,7 @@ impl Computer {
         }
     }
 
-    fn get_register(&self, id: RegisterIndexType) -> &Register<WorkingType> {
-        let id_u8: u8 = id.into();
-        match id_u8 {
-            0 => self.alu.accumulator(),
-            1 => self.x_register.borrow(),
-            2 => self.y_register.borrow(),
-            3 => self.z_register.borrow(),
-            _ => panic!("Max value of u2 exceeded."),
-        }
-    }
-
-    fn get_port(&self, id: PortIndexType) -> &Port<WorkingType> {
-        let id_u8: u8 = id.into();
-        self.ports[id_u8 as usize].borrow()
-    }
-
-    fn get_register_mut(&mut self, id: RegisterIndexType) -> &mut Register<WorkingType> {
+    fn get_register(&mut self, id: RegisterIndex) -> &mut Register<WorkingType> {
         let id_u8: u8 = id.into();
         match id_u8 {
             0 => self.alu.accumulator_mut(),
@@ -173,9 +162,14 @@ impl Computer {
         }
     }
 
-    fn get_port_mut(&mut self, id: RegisterIndexType) -> &mut Port<WorkingType> {
+    fn get_port(&mut self, id: PortIndex) -> &mut DevicePort<WorkingType> {
         let id_u8: u8 = id.into();
         self.ports[id_u8 as usize].borrow_mut()
+    }
+
+    fn get_pin(&mut self, id: PinIndex) -> &mut DevicePin {
+        let id_u8: u8 = id.into();
+        self.pins[id_u8 as usize].borrow_mut()
     }
 
     fn decode_xy(&self) -> u8 {

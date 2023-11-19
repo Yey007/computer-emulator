@@ -1,5 +1,3 @@
-mod console;
-
 trait Device {
-    fn
+    fn tick(&mut self);
 }

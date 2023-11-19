@@ -1,3 +1,5 @@
+#![feature(generic_const_exprs)]
+
 use crate::computer::Computer;
 use crate::types::PROGRAM_MEMORY_SIZE;
 use std::fs::File;
@@ -9,6 +11,8 @@ mod computer;
 mod device;
 mod instruction;
 mod types;
+mod port;
+mod un;
 
 fn load_program_from_file(path: &Path) -> Result<[u8; PROGRAM_MEMORY_SIZE], io::Error> {
     let mut f = File::open(path)?;

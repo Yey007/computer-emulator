@@ -1,55 +1,61 @@
-use crate::types::{InstructionBitType, ProgramCounterType, RegisterIndexType, WorkingType};
+use crate::types::{InstructionBitType, PinIndex, PortIndex, ProgramCounterType, RegisterIndex, WorkingType};
 use bitmatch::bitmatch;
 
 #[derive(Debug, PartialEq)]
 pub enum Instruction {
     NOP,
     STR {
-        register_id: RegisterIndexType,
+        register_id: RegisterIndex,
     },
     LOD {
-        register_id: RegisterIndexType,
+        register_id: RegisterIndex,
     },
     LDI {
-        register_id: RegisterIndexType,
+        register_id: RegisterIndex,
         immediate: WorkingType,
     },
     INC {
-        register_id: RegisterIndexType,
+        register_id: RegisterIndex,
     },
     DEC {
-        register_id: RegisterIndexType,
+        register_id: RegisterIndex,
     },
     MOV {
-        register_from_id: RegisterIndexType,
-        register_to_id: RegisterIndexType,
+        register_from_id: RegisterIndex,
+        register_to_id: RegisterIndex,
     },
     INP {
-        port_id: RegisterIndexType,
+        port_id: PortIndex,
     },
     OUT {
-        port_id: RegisterIndexType,
+        port_id: PortIndex,
+    },
+    SEP {
+        pin_id: PinIndex,
+    },
+    RSP {
+        pin_id: PinIndex,
     },
     ADD {
-        register_id: RegisterIndexType,
+        register_id: RegisterIndex,
     },
     SUB {
-        register_id: RegisterIndexType,
+        register_id: RegisterIndex,
     },
     BOR {
-        register_id: RegisterIndexType,
+        register_id: RegisterIndex,
     },
     AND {
-        register_id: RegisterIndexType,
+        register_id: RegisterIndex,
     },
     CMP {
-        register_id: RegisterIndexType,
+        register_id: RegisterIndex,
     },
     GRT {
-        register_id: RegisterIndexType,
+        register_id: RegisterIndex,
     },
     LES {
-        register_id: RegisterIndexType,
+        register_id: RegisterIndex,
     },
     BRN {
         immediate: ProgramCounterType,
@@ -63,51 +69,57 @@ pub fn decode_instruction(binary: InstructionBitType) -> Instruction {
     #[bitmatch]
     match binary {
         "000001rr" => Instruction::STR {
-            register_id: RegisterIndexType::new(r),
+            register_id: RegisterIndex::new(r),
         },
         "000010rr" => Instruction::LOD {
-            register_id: RegisterIndexType::new(r),
+            register_id: RegisterIndex::new(r),
         },
         "11rrxxxx" => Instruction::LDI {
-            register_id: RegisterIndexType::new(r),
+            register_id: RegisterIndex::new(r),
             immediate: WorkingType::new(x),
         },
         "000011rr" => Instruction::INC {
-            register_id: RegisterIndexType::new(r),
+            register_id: RegisterIndex::new(r),
         },
         "000100rr" => Instruction::DEC {
-            register_id: RegisterIndexType::new(r),
+            register_id: RegisterIndex::new(r),
         },
         "0111rrkk" => Instruction::MOV {
-            register_from_id: RegisterIndexType::new(r),
-            register_to_id: RegisterIndexType::new(k),
+            register_from_id: RegisterIndex::new(r),
+            register_to_id: RegisterIndex::new(k),
         },
         "010000pp" => Instruction::INP {
-            port_id: RegisterIndexType::new(p),
+            port_id: RegisterIndex::new(p),
         },
         "010001pp" => Instruction::OUT {
-            port_id: RegisterIndexType::new(p),
+            port_id: RegisterIndex::new(p),
+        },
+        "01001qqq" => Instruction::SEP {
+            pin_id: PinIndex::new(q),
+        },
+        "01010qqq" => Instruction::RSP {
+            pin_id: PinIndex::new(q),
         },
         "000101rr" => Instruction::ADD {
-            register_id: RegisterIndexType::new(r),
+            register_id: RegisterIndex::new(r),
         },
         "000110rr" => Instruction::SUB {
-            register_id: RegisterIndexType::new(r),
+            register_id: RegisterIndex::new(r),
         },
         "001000rr" => Instruction::BOR {
-            register_id: RegisterIndexType::new(r),
+            register_id: RegisterIndex::new(r),
         },
         "001001rr" => Instruction::AND {
-            register_id: RegisterIndexType::new(r),
+            register_id: RegisterIndex::new(r),
         },
         "001011rr" => Instruction::CMP {
-            register_id: RegisterIndexType::new(r),
+            register_id: RegisterIndex::new(r),
         },
         "001100rr" => Instruction::GRT {
-            register_id: RegisterIndexType::new(r),
+            register_id: RegisterIndex::new(r),
         },
         "001101rr" => Instruction::LES {
-            register_id: RegisterIndexType::new(r),
+            register_id: RegisterIndex::new(r),
         },
         "10xxxxxx" => Instruction::BRN {
             immediate: ProgramCounterType::new(x),
@@ -132,7 +144,7 @@ mod tests {
         assert_eq!(
             decode_instruction(0b00000111),
             Instruction::STR {
-                register_id: RegisterIndexType::new(0b11)
+                register_id: RegisterIndex::new(0b11)
             }
         )
     }
@@ -142,8 +154,8 @@ mod tests {
         assert_eq!(
             decode_instruction(0b1110110),
             Instruction::MOV {
-                register_from_id: RegisterIndexType::new(0b01),
-                register_to_id: RegisterIndexType::new(0b10)
+                register_from_id: RegisterIndex::new(0b01),
+                register_to_id: RegisterIndex::new(0b10)
             }
         )
     }
@@ -153,7 +165,7 @@ mod tests {
         assert_eq!(
             decode_instruction(0b11001100),
             Instruction::LDI {
-                register_id: RegisterIndexType::new(0b00),
+                register_id: RegisterIndex::new(0b00),
                 immediate: WorkingType::new(0b1100)
             }
         )
