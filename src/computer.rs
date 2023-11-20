@@ -8,30 +8,46 @@ use crate::computer::memory::readwrite::ReadWriteMemory;
 use crate::port::device_port::DevicePort;
 use crate::computer::register::Register;
 use crate::instruction::{decode_instruction, Instruction};
-use crate::types::{InstructionBitType, PinIndex, PINS_SIZE, PortIndex, PORT_BITS, PORTS_SIZE, PROGRAM_MEMORY_SIZE, ProgramCounterType, RegisterIndex, WORKING_MEMORY_SIZE, WorkingType};
 use std::borrow::{BorrowMut};
 use crate::port::device_pin::DevicePin;
 use crate::port::Port;
+use crate::un::U;
+
+pub const WORKING_BITS: usize = 4;
+pub const PC_BITS: usize = 6;
+pub const INSTRUCTION_BITS: usize = 8;
+pub const PORT_BITS: usize = 4;
+
+pub const NUM_REGISTERS: usize = 4;
+pub const NUM_PORTS: usize = 4;
+pub const NUM_PINS: usize = 8;
+
+pub const REGISTER_INDEX_BITS: usize = NUM_REGISTERS.ilog2() as usize;
+pub const PORT_INDEX_BITS: usize = NUM_PORTS.ilog2() as usize;
+pub const PIN_INDEX_BITS: usize = NUM_PORTS.ilog2() as usize;
+
+pub const PROGRAM_MEMORY_SIZE: usize = 2usize.pow(PC_BITS as u32);
+pub const WORKING_MEMORY_SIZE: usize = 2usize.pow(2 * WORKING_BITS as u32);  // two registers used to index
 
 pub struct Computer {
     alu: ArithmeticLogicUnit,
 
-    x_register: Register<WorkingType>,
-    y_register: Register<WorkingType>,
-    z_register: Register<WorkingType>,
-    program_counter: Register<ProgramCounterType>,
+    x_register: Register<WORKING_BITS>,
+    y_register: Register<WORKING_BITS>,
+    z_register: Register<WORKING_BITS>,
+    program_counter: Register<PC_BITS>,
 
     status_flag: bool,
 
-    ports: [DevicePort<PORT_BITS>; PORTS_SIZE],
-    pins: [DevicePin; PINS_SIZE],
+    ports: [DevicePort<PORT_BITS>; NUM_PORTS],
+    pins: [DevicePin; NUM_PINS],
 
-    program_memory: ReadOnlyMemory<InstructionBitType, PROGRAM_MEMORY_SIZE>,
-    working_memory: ReadWriteMemory<WorkingType, WORKING_MEMORY_SIZE>,
+    program_memory: ReadOnlyMemory<INSTRUCTION_BITS, PROGRAM_MEMORY_SIZE>,
+    working_memory: ReadWriteMemory<WORKING_BITS, WORKING_MEMORY_SIZE>,
 }
 
 impl Computer {
-    pub fn with_program(program: [InstructionBitType; PROGRAM_MEMORY_SIZE]) -> Self {
+    pub fn with_program(program: [U<INSTRUCTION_BITS>; PROGRAM_MEMORY_SIZE]) -> Self {
         Computer {
             alu: ArithmeticLogicUnit::new(),
             x_register: Register::new(),
@@ -58,12 +74,12 @@ impl Computer {
         }
     }
 
-    fn fetch(&self) -> InstructionBitType {
+    fn fetch(&self) -> U<INSTRUCTION_BITS> {
         let addr = self.program_counter.load();
         self.program_memory.read(addr)
     }
 
-    fn decode(&self, instruction: InstructionBitType) -> Instruction {
+    fn decode(&self, instruction: U<INSTRUCTION_BITS>) -> Instruction {
         decode_instruction(instruction)
     }
 
@@ -74,11 +90,11 @@ impl Computer {
                 let addr = self.decode_xy();
                 let register = self.get_register(register_id);
                 let value = register.load();
-                self.working_memory.write(addr, value)
+                self.working_memory.write(addr.into(), value)
             }
             Instruction::LOD { register_id } => {
                 let addr = self.decode_xy();
-                let value = self.working_memory.read(addr);
+                let value = self.working_memory.read(addr.into());
                 let register = self.get_register(register_id);
                 register.store(value)
             }
@@ -115,8 +131,8 @@ impl Computer {
                 let port = self.get_port(port_id);
                 port.write(val)
             }
-            Instruction::SEP { pin_id } => self.get_pin(pin_id).write(true),
-            Instruction::RSP { pin_id } => self.get_pin(pin_id).write(false),
+            Instruction::SEP { pin_id } => self.get_pin(pin_id).write(1u8.into()),
+            Instruction::RSP { pin_id } => self.get_pin(pin_id).write(0u8.into()),
             Instruction::ADD { register_id } => {
                 let value = self.get_register(register_id).load();
                 self.alu.add(value)
@@ -151,7 +167,7 @@ impl Computer {
         }
     }
 
-    fn get_register(&mut self, id: RegisterIndex) -> &mut Register<WorkingType> {
+    fn get_register(&mut self, id: U<REGISTER_INDEX_BITS>) -> &mut Register<WORKING_BITS> {
         let id_u8: u8 = id.into();
         match id_u8 {
             0 => self.alu.accumulator_mut(),
@@ -162,12 +178,12 @@ impl Computer {
         }
     }
 
-    fn get_port(&mut self, id: PortIndex) -> &mut DevicePort<WorkingType> {
+    fn get_port(&mut self, id: U<PORT_INDEX_BITS>) -> &mut DevicePort<WORKING_BITS> {
         let id_u8: u8 = id.into();
         self.ports[id_u8 as usize].borrow_mut()
     }
 
-    fn get_pin(&mut self, id: PinIndex) -> &mut DevicePin {
+    fn get_pin(&mut self, id: U<PIN_INDEX_BITS>) -> &mut DevicePin {
         let id_u8: u8 = id.into();
         self.pins[id_u8 as usize].borrow_mut()
     }

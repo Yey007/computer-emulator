@@ -1,31 +1,31 @@
-use std::ops::{Add, Sub};
-use ux::u2;
+use crate::bytes_to_store_bits;
+use crate::un::U;
 
-pub struct Register<T> {
-    value: T,
+pub struct Register<const N: usize> where [(); bytes_to_store_bits!(N)]: Sized {
+    value: U<N>,
 }
 
-impl<T: Copy + From<u2> + Add<Output = T> + Sub<Output = T>> Register<T> {
+impl<const N: usize> Register<N> where [(); bytes_to_store_bits!(N)]: Sized {
     pub fn new() -> Self {
         Register {
-            value: T::try_from(u2::new(0)).unwrap(),
+            value: 0u8.into(),
         }
     }
 
-    pub fn store(&mut self, value: T) {
+    pub fn store(&mut self, value: U<N>) {
         self.value = value
     }
 
-    pub fn load(&self) -> T {
+    pub fn load(&self) -> U<N> {
         self.value
     }
 
     pub fn increment(&mut self) {
-        self.value = self.value + T::try_from(u2::new(1)).unwrap()
+        self.value = self.value + 1u8.into()
     }
 
     pub fn decrement(&mut self) {
-        self.value = self.value - T::try_from(u2::new(1)).unwrap()
+        self.value = self.value - 1u8.into()
     }
 }
 
@@ -35,36 +35,36 @@ mod tests {
 
     #[test]
     fn init() {
-        let r: Register<u8> = Register::new();
+        let r: Register<8> = Register::new();
         assert_eq!(r.value, 0)
     }
 
     #[test]
     fn store() {
-        let mut r: Register<u8> = Register::new();
-        r.store(1);
+        let mut r: Register<8> = Register::new();
+        r.store(1.into());
         assert_eq!(r.value, 1)
     }
 
     #[test]
     fn load() {
-        let mut r: Register<u8> = Register::new();
-        r.value = 10;
+        let mut r: Register<8> = Register::new();
+        r.value = 10.into();
         assert_eq!(r.load(), 10)
     }
 
     #[test]
     fn increment() {
-        let mut r: Register<u8> = Register::new();
-        r.value = 10;
+        let mut r: Register<8> = Register::new();
+        r.value = 10.into();
         r.increment();
         assert_eq!(r.value, 11)
     }
 
     #[test]
     fn decrement() {
-        let mut r: Register<u8> = Register::new();
-        r.value = 10;
+        let mut r: Register<8> = Register::new();
+        r.value = 10.into();
         r.decrement();
         assert_eq!(r.value, 9)
     }

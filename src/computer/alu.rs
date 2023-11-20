@@ -1,9 +1,10 @@
 use crate::computer::register::Register;
-use crate::types::WorkingType;
+use crate::computer::WORKING_BITS;
 use std::borrow::{Borrow, BorrowMut};
+use crate::un::U;
 
 pub struct ArithmeticLogicUnit {
-    accumulator: Register<WorkingType>,
+    accumulator: Register<WORKING_BITS>,
 }
 
 impl ArithmeticLogicUnit {
@@ -13,45 +14,45 @@ impl ArithmeticLogicUnit {
         }
     }
 
-    pub fn accumulator(&self) -> &Register<WorkingType> {
+    pub fn accumulator(&self) -> &Register<WORKING_BITS> {
         self.accumulator.borrow()
     }
 
-    pub fn accumulator_mut(&mut self) -> &mut Register<WorkingType> {
+    pub fn accumulator_mut(&mut self) -> &mut Register<WORKING_BITS> {
         self.accumulator.borrow_mut()
     }
 
-    pub fn add(&mut self, value: WorkingType) {
+    pub fn add(&mut self, value: U<WORKING_BITS>) {
         let current = self.accumulator.load();
         self.accumulator.store(current + value)
     }
 
-    pub fn sub(&mut self, value: WorkingType) {
+    pub fn sub(&mut self, value: U<WORKING_BITS>) {
         let current = self.accumulator.load();
         self.accumulator.store(current - value)
     }
 
-    pub fn bor(&mut self, value: WorkingType) {
+    pub fn bor(&mut self, value: U<WORKING_BITS>) {
         let current = self.accumulator.load();
         self.accumulator.store(current | value)
     }
 
-    pub fn and(&mut self, value: WorkingType) {
+    pub fn and(&mut self, value: U<WORKING_BITS>) {
         let current = self.accumulator.load();
         self.accumulator.store(current & value)
     }
 
-    pub fn cmp(&self, value: WorkingType) -> bool {
+    pub fn cmp(&self, value: U<WORKING_BITS>) -> bool {
         let current = self.accumulator.load();
         current == value
     }
 
-    pub fn grt(&self, value: WorkingType) -> bool {
+    pub fn grt(&self, value: U<WORKING_BITS>) -> bool {
         let current = self.accumulator.load();
         current > value
     }
 
-    pub fn les(&self, value: WorkingType) -> bool {
+    pub fn les(&self, value: U<WORKING_BITS>) -> bool {
         let current = self.accumulator.load();
         current < value
     }
@@ -63,93 +64,93 @@ mod tests {
 
     fn initialize_alu() -> ArithmeticLogicUnit {
         let mut alu = ArithmeticLogicUnit::new();
-        alu.accumulator.borrow_mut().store(WorkingType::new(5));
+        alu.accumulator.borrow_mut().store(5.into());
         alu
     }
 
     #[test]
     fn add() {
         let mut alu = initialize_alu();
-        alu.add(WorkingType::new(4));
-        assert_eq!(alu.accumulator.borrow().load(), WorkingType::new(9))
+        alu.add(4.into());
+        assert_eq!(alu.accumulator.borrow().load(), 9.into())
     }
 
     #[test]
     fn sub() {
         let mut alu = initialize_alu();
-        alu.sub(WorkingType::new(4));
-        assert_eq!(alu.accumulator.borrow().load(), WorkingType::new(1))
+        alu.sub(4.into());
+        assert_eq!(alu.accumulator.borrow().load(), 1.into())
     }
 
     #[test]
     fn bor() {
         let mut alu = initialize_alu();
         // 5 is 0b101
-        alu.bor(WorkingType::new(0b011));
-        assert_eq!(alu.accumulator.borrow().load(), WorkingType::new(0b111))
+        alu.bor(0b011.into());
+        assert_eq!(alu.accumulator.borrow().load(), 0b111.into())
     }
 
     #[test]
     fn and() {
         let mut alu = initialize_alu();
         // 5 is 0b101
-        alu.and(WorkingType::new(0b011));
-        assert_eq!(alu.accumulator.borrow().load(), WorkingType::new(0b001))
+        alu.and(0b011.into());
+        assert_eq!(alu.accumulator.borrow().load(), 0b001.into())
     }
 
     #[test]
     fn cmp_equal() {
         let alu = initialize_alu();
-        let result = alu.cmp(WorkingType::new(5));
+        let result = alu.cmp(5.into());
         assert_eq!(result, true)
     }
 
     #[test]
     fn cmp_not_equal() {
         let alu = initialize_alu();
-        let result = alu.cmp(WorkingType::new(4));
+        let result = alu.cmp(4.into());
         assert_eq!(result, false)
     }
 
     #[test]
     fn grt_equal() {
         let alu = initialize_alu();
-        let result = alu.les(WorkingType::new(5));
+        let result = alu.les(5.into());
         assert_eq!(result, false)
     }
 
     #[test]
     fn grt_less() {
         let alu = initialize_alu();
-        let result = alu.les(WorkingType::new(4));
+        let result = alu.les(4.into());
         assert_eq!(result, false)
     }
 
     #[test]
     fn grt_greater() {
         let alu = initialize_alu();
-        let result = alu.les(WorkingType::new(6));
+        let result = alu.les(6.into());
         assert_eq!(result, true)
     }
 
     #[test]
     fn les_equal() {
         let alu = initialize_alu();
-        let result = alu.les(WorkingType::new(5));
+        let result = alu.les(5.into());
         assert_eq!(result, false)
     }
 
     #[test]
     fn les_less() {
         let alu = initialize_alu();
-        let result = alu.les(WorkingType::new(6));
+        let result = alu.les(6.into());
         assert_eq!(result, true)
     }
 
     #[test]
     fn les_greater() {
         let alu = initialize_alu();
-        let result = alu.les(WorkingType::new(4));
+        let result = alu.les(4.into());
         assert_eq!(result, false)
     }
 }
