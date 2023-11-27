@@ -20,10 +20,10 @@ impl<const N: usize, const M: usize> ReadWriteMemory<N, M>
     }
 
     pub fn read(&self, location: U<{ bits_to_index_length!(M) }>) -> U<N> {
-        self.memory[usize::from(location)]
+        self.memory[u128::from(location) as usize]
     }
 
     pub fn write(&mut self, location: U<{ bits_to_index_length!(M) }>, value: U<N>) {
-        self.memory[usize::from(location)] = value;
+        self.memory[u128::from(location) as usize] = value;
     }
 }

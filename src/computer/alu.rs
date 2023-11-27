@@ -64,93 +64,93 @@ mod tests {
 
     fn initialize_alu() -> ArithmeticLogicUnit {
         let mut alu = ArithmeticLogicUnit::new();
-        alu.accumulator.borrow_mut().store(5.into());
+        alu.accumulator.borrow_mut().store(5u8.into());
         alu
     }
 
     #[test]
     fn add() {
         let mut alu = initialize_alu();
-        alu.add(4.into());
-        assert_eq!(alu.accumulator.borrow().load(), 9.into())
+        alu.add(4u8.into());
+        assert_eq!(alu.accumulator.borrow().load(), 9u8.into())
     }
 
     #[test]
     fn sub() {
         let mut alu = initialize_alu();
-        alu.sub(4.into());
-        assert_eq!(alu.accumulator.borrow().load(), 1.into())
+        alu.sub(4u8.into());
+        assert_eq!(alu.accumulator.borrow().load(), 1u8.into())
     }
 
     #[test]
     fn bor() {
         let mut alu = initialize_alu();
         // 5 is 0b101
-        alu.bor(0b011.into());
-        assert_eq!(alu.accumulator.borrow().load(), 0b111.into())
+        alu.bor(0b011u8.into());
+        assert_eq!(alu.accumulator.borrow().load(), 0b111u8.into())
     }
 
     #[test]
     fn and() {
         let mut alu = initialize_alu();
         // 5 is 0b101
-        alu.and(0b011.into());
-        assert_eq!(alu.accumulator.borrow().load(), 0b001.into())
+        alu.and(0b011u8.into());
+        assert_eq!(alu.accumulator.borrow().load(), 0b001u8.into())
     }
 
     #[test]
     fn cmp_equal() {
         let alu = initialize_alu();
-        let result = alu.cmp(5.into());
+        let result = alu.cmp(5u8.into());
         assert_eq!(result, true)
     }
 
     #[test]
     fn cmp_not_equal() {
         let alu = initialize_alu();
-        let result = alu.cmp(4.into());
+        let result = alu.cmp(4u8.into());
         assert_eq!(result, false)
     }
 
     #[test]
     fn grt_equal() {
         let alu = initialize_alu();
-        let result = alu.les(5.into());
+        let result = alu.les(5u8.into());
         assert_eq!(result, false)
     }
 
     #[test]
     fn grt_less() {
         let alu = initialize_alu();
-        let result = alu.les(4.into());
+        let result = alu.les(4u8.into());
         assert_eq!(result, false)
     }
 
     #[test]
     fn grt_greater() {
         let alu = initialize_alu();
-        let result = alu.les(6.into());
+        let result = alu.les(6u8.into());
         assert_eq!(result, true)
     }
 
     #[test]
     fn les_equal() {
         let alu = initialize_alu();
-        let result = alu.les(5.into());
+        let result = alu.les(5u8.into());
         assert_eq!(result, false)
     }
 
     #[test]
     fn les_less() {
         let alu = initialize_alu();
-        let result = alu.les(6.into());
+        let result = alu.les(6u8.into());
         assert_eq!(result, true)
     }
 
     #[test]
     fn les_greater() {
         let alu = initialize_alu();
-        let result = alu.les(4.into());
+        let result = alu.les(4u8.into());
         assert_eq!(result, false)
     }
 }

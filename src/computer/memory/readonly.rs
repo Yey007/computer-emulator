@@ -15,6 +15,7 @@ impl<const N: usize, const M: usize> ReadOnlyMemory<N, M>
 
     pub fn read(&self, location: U<{ bits_to_index_length!(M) }>) -> U<N>
     {
-        self.memory[usize::from(location)]
+        // this is a bit of a hack because we don't have usize
+        self.memory[u128::from(location) as usize]
     }
 }

@@ -67,8 +67,10 @@ pub enum Instruction {
 
 #[bitmatch]
 pub fn decode_instruction(binary: U<INSTRUCTION_BITS>) -> Instruction {
+    let a: u8 = binary.into();
+
     #[bitmatch]
-    match binary.into() {
+    match a {
         "000001rr" => Instruction::STR {
             register_id: r.into(),
         },
@@ -137,15 +139,15 @@ mod tests {
 
     #[test]
     fn no_operands() {
-        assert_eq!(decode_instruction(0b00111000.into()), Instruction::SSF)
+        assert_eq!(decode_instruction(0b00111000u8.into()), Instruction::SSF)
     }
 
     #[test]
     fn register_operand() {
         assert_eq!(
-            decode_instruction(0b00000111.into()),
+            decode_instruction(0b00000111u8.into()),
             Instruction::STR {
-                register_id: 0b11.into()
+                register_id: 0b11u8.into()
             }
         )
     }
@@ -153,10 +155,10 @@ mod tests {
     #[test]
     fn two_register_operands() {
         assert_eq!(
-            decode_instruction(0b1110110.into()),
+            decode_instruction(0b1110110u8.into()),
             Instruction::MOV {
-                register_from_id: 0b01.into(),
-                register_to_id: 0b10.into()
+                register_from_id: 0b01u8.into(),
+                register_to_id: 0b10u8.into()
             }
         )
     }
@@ -164,10 +166,10 @@ mod tests {
     #[test]
     fn register_and_immediate_operands() {
         assert_eq!(
-            decode_instruction(0b11001100.into()),
+            decode_instruction(0b11001100u8.into()),
             Instruction::LDI {
-                register_id: 0b00.into(),
-                immediate: 0b1100.into()
+                register_id: 0b00u8.into(),
+                immediate: 0b1100u8.into()
             }
         )
     }

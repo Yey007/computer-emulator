@@ -36,36 +36,36 @@ mod tests {
     #[test]
     fn init() {
         let r: Register<8> = Register::new();
-        assert_eq!(r.value, 0)
+        assert_eq!(r.value, 0u8.into())
     }
 
     #[test]
     fn store() {
         let mut r: Register<8> = Register::new();
-        r.store(1.into());
-        assert_eq!(r.value, 1)
+        r.store(1u8.into());
+        assert_eq!(r.value, 1u8.into())
     }
 
     #[test]
     fn load() {
         let mut r: Register<8> = Register::new();
-        r.value = 10.into();
-        assert_eq!(r.load(), 10)
+        r.value = 10u8.into();
+        assert_eq!(r.load(), 10u8.into())
     }
 
     #[test]
     fn increment() {
         let mut r: Register<8> = Register::new();
-        r.value = 10.into();
+        r.value = 10u8.into();
         r.increment();
-        assert_eq!(r.value, 11)
+        assert_eq!(r.value, 11u8.into())
     }
 
     #[test]
     fn decrement() {
         let mut r: Register<8> = Register::new();
-        r.value = 10.into();
+        r.value = 10u8.into();
         r.decrement();
-        assert_eq!(r.value, 9)
+        assert_eq!(r.value, 9u8.into())
     }
 }
