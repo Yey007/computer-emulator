@@ -1,3 +1,3 @@
-use crate::port::device_port::DevicePort;
+use crate::connectable::device_port::DevicePort;
 
-pub type DevicePin = DevicePort<1>;
+pub type DevicePin<'a> = DevicePort<'a, 1>;

@@ -1,5 +1,5 @@
-use std::cmp::{Ordering};
-use std::ops::{Add, BitAnd, BitOr, Sub};
+use std::cmp::{min, Ordering};
+use std::ops::{Add, AddAssign, BitAnd, BitOr, Shl, Shr, Sub, SubAssign};
 
 #[macro_export]
 macro_rules! bytes_to_store_bits {
@@ -14,7 +14,6 @@ pub struct U<const N: usize> where [(); bytes_to_store_bits!(N)]: Sized {
     value: [u8; bytes_to_store_bits!(N)],
 }
 
-
 impl<const N: usize> U<N> where [(); bytes_to_store_bits!(N)]: Sized {
     pub fn new() -> Self <> {
         U {
@@ -22,9 +21,15 @@ impl<const N: usize> U<N> where [(); bytes_to_store_bits!(N)]: Sized {
         }
     }
 
-    pub fn with_value<const M: usize>(value: [u8; bytes_to_store_bits!(M)]) -> Self <> {
+    pub fn with_value(value: [u8; bytes_to_store_bits!(N)]) -> Self <> {
         U {
-            value: from_m_to_n_bits(value)
+            value
+        }
+    }
+
+    pub fn change_bits<const M: usize>(&self) -> U<M> where [(); bytes_to_store_bits!(M)]: Sized {
+        U {
+            value: change_bits(self.value)
         }
     }
 }
@@ -44,6 +49,13 @@ impl<const N: usize> Add for U<N> where [(); bytes_to_store_bits!(N)]: Sized {
         }
 
         U::with_value(out_arr)
+    }
+}
+
+impl<const N: usize> AddAssign for U<N> where [(); bytes_to_store_bits!(N)]: Sized {
+    fn add_assign(&mut self, rhs: Self) {
+        // TODO: efficiency
+        *self = *self + rhs
     }
 }
 
@@ -80,6 +92,12 @@ impl<const N: usize> Sub for U<N> where [(); bytes_to_store_bits!(N)]: Sized {
     }
 }
 
+impl<const N: usize> SubAssign for U<N> where [(); bytes_to_store_bits!(N)]: Sized {
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self + rhs
+    }
+}
+
 impl<const N: usize> BitAnd for U<N> where [(); bytes_to_store_bits!(N)]: Sized {
     type Output = U<N>;
 
@@ -97,6 +115,73 @@ impl<const N: usize> BitOr for U<N> where [(); bytes_to_store_bits!(N)]: Sized {
         let out_vec: Vec<u8> = self.value.iter().zip(rhs.value).map(|(&n1, n2)| n1 | n2).collect();
         let out_arr: [u8; bytes_to_store_bits!(N)] = out_vec.try_into().unwrap();
         U::with_value(out_arr)
+    }
+}
+
+trait ZeroedShift {
+    fn zeroed_shr(self, rhs: u32) -> Self;
+    fn zeroed_shl(self, rhs: u32) -> Self;
+}
+
+impl ZeroedShift for u8 {
+    fn zeroed_shr(self, rhs: u32) -> Self {
+        self.checked_shr(rhs).unwrap_or(0)
+    }
+
+    fn zeroed_shl(self, rhs: u32) -> Self {
+        self.checked_shl(rhs).unwrap_or(0)
+    }
+}
+
+impl<const N: usize> Shr for U<N> where [(); bytes_to_store_bits!(N)]: Sized {
+    type Output = U<N>;
+
+    fn shr(self, rhs: Self) -> Self::Output {
+        let mut arr = self.value;
+        let mut shifts_so_far: Self = 0u8.into();
+        while rhs > shifts_so_far {
+            let shifts_to_do: u32 = min(rhs - shifts_so_far, 8u8.into()).into();
+            for i in 0..(arr.len() - 1) {
+                // get bottom "shifts_to_do" bits of next higher byte -- this is what will be shifted out
+                let shifted_out = arr[i + 1] & (0b11111111u8.zeroed_shr(8 - shifts_to_do));
+                // shift the current bytes
+                arr[i] = arr[i].zeroed_shr(shifts_to_do);
+                // replace the upper "shifts_to_do" bits with the bits from "shifted_out"
+                arr[i] |= shifted_out.zeroed_shl(8 - shifts_to_do);
+            }
+            // shift the highest byte
+            arr[arr.len() - 1] = arr[arr.len() - 1].zeroed_shr(shifts_to_do);
+
+            shifts_so_far += shifts_to_do.into()
+        }
+
+        U::with_value(arr)
+    }
+}
+
+impl<const N: usize> Shl for U<N> where [(); bytes_to_store_bits!(N)]: Sized {
+    type Output = U<N>;
+
+    fn shl(self, rhs: Self) -> Self::Output {
+        let mut arr = self.value;
+        let mut shifts_so_far: Self = 0u8.into();
+        while rhs > shifts_so_far {
+            let shifts_to_do: u32 = min(rhs - shifts_so_far, 8u8.into()).into();
+            for i in (1..arr.len()).rev() {
+                // get top "shifts_to_do" bits of next lower byte -- this is what will be shifted out
+                let shifted_out = arr[i - 1] & (0b11111111u8.zeroed_shl(8 - shifts_to_do));
+                // shift the current byte
+                arr[i] = arr[i].zeroed_shl(shifts_to_do);
+                // replace the lower "shifts_to_do" bits with the bits from "shifted_out"
+                arr[i] |= shifted_out.zeroed_shr(8 - shifts_to_do);
+            }
+            // shift the lowest byte
+            arr[0] = arr[0].zeroed_shl(shifts_to_do);
+
+            shifts_so_far += shifts_to_do.into()
+        }
+
+        U::with_value(arr)
     }
 }
 
@@ -137,7 +222,7 @@ macro_rules! impl_from_primitive {
         impl<const N: usize> From<$un> for U<N> where [(); bytes_to_store_bits!(N)]: Sized {
             fn from(value: $un) -> Self {
                 let bytes = <$un>::to_le_bytes(value);
-                U::with_value::<$bits>(bytes)
+                U::with_value(change_bits::<$bits, N>(bytes))
             }
         }
     };
@@ -147,7 +232,7 @@ macro_rules! impl_to_primitive {
     ($un:ty, $bits:expr) => {
         impl<const N: usize> From<U<N>> for $un where [(); bytes_to_store_bits!(N)]: Sized {
             fn from(value: U<N>) -> Self {
-                let bytes = from_m_to_n_bits::<N, $bits>(value.value);
+                let bytes = change_bits::<N, $bits>(value.value);
                 <$un>::from_le_bytes(bytes)
             }
         }
@@ -172,7 +257,7 @@ impl_to_primitive!(u64, 64);
 impl_to_primitive!(u128, 128);
 // impl_to_primitive!(usize);
 
-fn from_m_to_n_bits<const M: usize, const N: usize>(array: [u8; bytes_to_store_bits!(M)]) -> [u8; bytes_to_store_bits!(N)] {
+fn change_bits<const M: usize, const N: usize>(array: [u8; bytes_to_store_bits!(M)]) -> [u8; bytes_to_store_bits!(N)] {
     // Make right length result array
     let mut out = [0u8; bytes_to_store_bits!(N)];
     if M < N {
@@ -182,7 +267,7 @@ fn from_m_to_n_bits<const M: usize, const N: usize>(array: [u8; bytes_to_store_b
         let last = out.last_mut().unwrap();
         let shift = bytes_to_store_bits!(N) * 8 - N;
         debug_assert!(shift < 8);
-        *last = *last & (0b11111111 >> shift);
+        *last &= 0b11111111 >> shift;
     }
     out
 }
@@ -331,5 +416,25 @@ mod tests {
         let d: U<13> = 0b1_1010_0101_1100u16.into();
 
         assert_eq!(c | d, 0b1_1010_1111_1111u16.into())
+    }
+
+    #[test]
+    fn shr() {
+        let a: U<8> = 0b01101001u8.into();
+        assert_eq!(a >> 5u8.into(), 0b00000011u8.into());
+
+        let b: U<12> = 0b0110_11000111u16.into();
+        assert_eq!(b >> 3u8.into(), 0b0000_11011000u16.into());
+        assert_eq!(b >> 9u8.into(), 0b0000_00000011u16.into());
+    }
+
+    #[test]
+    fn shl() {
+        let a: U<8> = 0b01101001u8.into();
+        assert_eq!(a << 5u8.into(), 0b00100000u8.into());
+
+        let b: U<12> = 0b0110_11000111u16.into();
+        assert_eq!(b << 3u8.into(), 0b0110_00111000u16.into());
+        assert_eq!(b << 9u8.into(), 0b1110_00000000u16.into());
     }
 }
