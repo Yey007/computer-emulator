@@ -17,6 +17,7 @@ mod instruction;
 mod connectable;
 mod un;
 mod simulation;
+mod notif_cell;
 
 fn load_program_from_file(path: &Path) -> Result<[u8; PROGRAM_MEMORY_SIZE], io::Error> {
     let mut f = File::open(path)?;
