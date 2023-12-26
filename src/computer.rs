@@ -8,7 +8,8 @@ use crate::computer::memory::readwrite::ReadWriteMemory;
 use crate::connectable::device_port::DevicePort;
 use crate::computer::register::Register;
 use crate::instruction::{decode_instruction, Instruction};
-use std::borrow::{BorrowMut};
+use std::cell::RefCell;
+use std::rc::Rc;
 use crate::connectable::device_pin::DevicePin;
 use crate::device::Device;
 use crate::un::U;
@@ -29,7 +30,7 @@ pub const PIN_INDEX_BITS: usize = NUM_PORTS.ilog2() as usize;
 pub const PROGRAM_MEMORY_SIZE: usize = 2usize.pow(PC_BITS as u32);
 pub const WORKING_MEMORY_SIZE: usize = 2usize.pow(2 * WORKING_BITS as u32);  // two registers used to index
 
-pub struct Computer<'a> {
+pub struct Computer {
     alu: ArithmeticLogicUnit,
 
     x_register: Register<WORKING_BITS>,
@@ -39,14 +40,14 @@ pub struct Computer<'a> {
 
     status_flag: bool,
 
-    ports: [DevicePort<'a, PORT_BITS>; NUM_PORTS],
-    pins: [DevicePin<'a>; NUM_PINS],
+    ports: [Rc<RefCell<DevicePort<PORT_BITS>>>; NUM_PORTS],
+    pins: [Rc<RefCell<DevicePin>>; NUM_PINS],
 
     program_memory: ReadOnlyMemory<INSTRUCTION_BITS, PROGRAM_MEMORY_SIZE>,
     working_memory: ReadWriteMemory<WORKING_BITS, WORKING_MEMORY_SIZE>,
 }
 
-impl<'a> Device for Computer<'a> {
+impl Device for Computer {
     fn tick(&mut self) {
         let inst_bits = self.fetch();
         self.program_counter.increment();
@@ -55,7 +56,7 @@ impl<'a> Device for Computer<'a> {
     }
 }
 
-impl<'a> Computer<'a> {
+impl Computer {
     pub fn with_program(program: [U<INSTRUCTION_BITS>; PROGRAM_MEMORY_SIZE]) -> Self {
         Computer {
             alu: ArithmeticLogicUnit::new(),
@@ -65,14 +66,16 @@ impl<'a> Computer<'a> {
             program_counter: Register::new(),
             status_flag: false,
             ports: [
-                DevicePort::new(),
-                DevicePort::new(),
-                DevicePort::new(),
-                DevicePort::new()
+                Rc::new(RefCell::new(DevicePort::new())),
+                Rc::new(RefCell::new(DevicePort::new())),
+                Rc::new(RefCell::new(DevicePort::new())),
+                Rc::new(RefCell::new(DevicePort::new()))
             ],
             pins: [
-                DevicePin::new(), DevicePin::new(), DevicePin::new(), DevicePin::new(),
-                DevicePin::new(), DevicePin::new(), DevicePin::new(), DevicePin::new()
+                Rc::new(RefCell::new(DevicePin::new())), Rc::new(RefCell::new(DevicePin::new())),
+                Rc::new(RefCell::new(DevicePin::new())), Rc::new(RefCell::new(DevicePin::new())),
+                Rc::new(RefCell::new(DevicePin::new())), Rc::new(RefCell::new(DevicePin::new())),
+                Rc::new(RefCell::new(DevicePin::new())), Rc::new(RefCell::new(DevicePin::new()))
             ],
             program_memory: ReadOnlyMemory::with_values(program),
             working_memory: ReadWriteMemory::new(),
@@ -129,16 +132,16 @@ impl<'a> Computer<'a> {
                 register_to.store(value)
             }
             Instruction::INP { port_id } => {
-                let value = self.get_port(port_id).read();
+                let value = self.get_port(port_id).borrow_mut().read();
                 self.z_register.store(value)
             }
             Instruction::OUT { port_id } => {
                 let val = self.z_register.load();
                 let port = self.get_port(port_id);
-                port.write(val);
+                port.borrow_mut().write(val);
             }
-            Instruction::SEP { pin_id } => self.get_pin(pin_id).write(1u8.into()),
-            Instruction::RSP { pin_id } => self.get_pin(pin_id).write(0u8.into()),
+            Instruction::SEP { pin_id } => self.get_pin(pin_id).borrow_mut().write(1u8.into()),
+            Instruction::RSP { pin_id } => self.get_pin(pin_id).borrow_mut().write(0u8.into()),
             Instruction::ADD { register_id } => {
                 let value = self.get_register(register_id).load();
                 self.alu.add(value)
@@ -177,21 +180,21 @@ impl<'a> Computer<'a> {
         let id_u8: u8 = id.into();
         match id_u8 {
             0 => self.alu.accumulator_mut(),
-            1 => self.x_register.borrow_mut(),
-            2 => self.y_register.borrow_mut(),
-            3 => self.z_register.borrow_mut(),
+            1 => &mut self.x_register,
+            2 => &mut self.y_register,
+            3 => &mut self.z_register,
             _ => panic!("Max value of u2 exceeded."),
         }
     }
 
-    pub fn get_port(&mut self, id: U<PORT_INDEX_BITS>) -> &mut DevicePort<'a, PORT_BITS> {
+    pub fn get_port(&mut self, id: U<PORT_INDEX_BITS>) -> Rc<RefCell<DevicePort<PORT_BITS>>> {
         let id_u8: u8 = id.into();
-        &mut self.ports[id_u8 as usize]
+        self.ports[id_u8 as usize].clone()
     }
 
-    pub fn get_pin(&mut self, id: U<PIN_INDEX_BITS>) -> &mut DevicePin<'a> {
+    pub fn get_pin(&mut self, id: U<PIN_INDEX_BITS>) -> Rc<RefCell<DevicePin>> {
         let id_u8: u8 = id.into();
-        &mut self.pins[id_u8 as usize]
+        self.pins[id_u8 as usize].clone()
     }
 
     fn decode_xy(&self) -> u8 {

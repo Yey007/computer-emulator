@@ -1,15 +1,19 @@
 #![feature(generic_const_exprs)]
 #![feature(generic_arg_infer)]
 
+use std::cell::RefCell;
 use crate::computer::{Computer, PROGRAM_MEMORY_SIZE};
 use std::fs::File;
 use std::io;
 use std::io::Read;
 use std::path::Path;
+use std::rc::Rc;
 use crate::connectable::Connectable;
 use crate::connectable::device_port::DevicePort;
+use crate::connectable::spliter::Spliter;
 use crate::device::console::Console;
 use crate::simulation::run_simulation;
+use crate::un::U;
 
 mod computer;
 mod device;
@@ -40,14 +44,17 @@ fn main() {
         0b00000000,
     ].map(|e| (e as u8).into()));
 
-    // let splitter: Spliter<4, 2> = Spliter::new();
-    // let mut p1: DevicePort<4> = DevicePort::new();
-    // let mut p2: DevicePort<2> = DevicePort::new();
-    // let mut p3: DevicePort<6> = DevicePort::new();
-    //
-    // p1.connect_to(&splitter.as_low_end());
-    // p2.connect_to(&splitter.as_high_end());
-    // p3.connect_to(&splitter);
+    let mut splitter = Rc::new(RefCell::new(Spliter::<4, 2>::new()));
+    let p1 = Rc::new(RefCell::new(DevicePort::<4>::new()));
+    let p2 = Rc::new(RefCell::new(DevicePort::<2>::new()));
+    let p3 = Rc::new(RefCell::new(DevicePort::<6>::new()));
+
+    splitter.clone().borrow_mut().as_low_end().connect_to(p1.clone());
+    p1.borrow_mut().connect_to();
+
+    p3.borrow_mut().write(0b110101u8.into());
+    let p1_val: U<4> = p1.borrow_mut().read();
+    let p2_val: U<2> = p2.borrow_mut().read();
 
     let mut console = Console::new();
 
@@ -57,10 +64,11 @@ fn main() {
     let ascii_port = console.ascii_port();
     let write_pin = console.write_pin();
 
-    computer_port1.connect_to(computer_port2);
-    computer_port2.connect_to(computer_port1);
+    computer_port1.borrow_mut().connect_to(computer_port2.clone());
+    computer_port2.borrow_mut().connect_to(computer_port1);
 
-    write_pin.connect_to(computer_pin);
+    write_pin.borrow_mut().connect_to(computer_pin.clone());
+    computer_pin.borrow_mut().connect_to(write_pin);
 
     run_simulation(vec![Box::new(computer)]);
 }

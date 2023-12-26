@@ -1,35 +1,40 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use crate::bytes_to_store_bits;
 use crate::connectable::Connectable;
 use crate::un::U;
 
-pub struct DevicePort<'a, const N: usize> where [(); bytes_to_store_bits!(N)]: Sized {
+pub struct DevicePort<const N: usize> where [(); bytes_to_store_bits!(N)]: Sized {
     value: U<N>,
-    connection: Option<&'a dyn Connectable<'a, N>>
+    connection: Option<Rc<RefCell<dyn Connectable<N>>>>,
 }
 
-impl<'a, const N: usize> DevicePort<'a, N> where [(); bytes_to_store_bits!(N)]: Sized {
-    pub fn new() -> Self<> {
+impl<const N: usize> DevicePort<N> where [(); bytes_to_store_bits!(N)]: Sized {
+    pub fn new() -> Self <> {
         DevicePort {
             value: 0u8.into(),
-            connection: None
+            connection: None,
         }
     }
 
-    pub fn read(&self) -> U<N> {
+    pub fn read(&mut self) -> U<N> {
+        if let Some(connection) = &self.connection {
+            self.value = connection.borrow().pull_value()
+        }
         self.value
     }
 
     pub fn write(&mut self, value: U<N>) {
-        self.value = value
+        self.value = value;
     }
 }
 
-impl<'a, const N: usize> Connectable<'a, N> for DevicePort<'a, N> where [(); bytes_to_store_bits!(N)]: Sized {
-    fn propagate(&self, value: U<N>) {
-        todo!()
+impl<const N: usize> Connectable<N> for DevicePort<N> where [(); bytes_to_store_bits!(N)]: Sized {
+    fn pull_value(&self) -> U<N> {
+        self.value
     }
 
-    fn connect_to(&mut self, other: &'a dyn Connectable<'a, N>) {
-        self.connection = Some(other);
+    fn connect_to(&mut self, other: Rc<RefCell<dyn Connectable<N>>>) {
+        self.connection = Some(other)
     }
 }
