@@ -29,7 +29,7 @@ pub const PIN_INDEX_BITS: usize = NUM_PORTS.ilog2() as usize;
 pub const PROGRAM_MEMORY_SIZE: usize = 2usize.pow(PC_BITS as u32);
 pub const WORKING_MEMORY_SIZE: usize = 2usize.pow(2 * WORKING_BITS as u32);  // two registers used to index
 
-pub struct Computer<'a> {
+pub struct Computer {
     alu: ArithmeticLogicUnit,
 
     x_register: Register<WORKING_BITS>,
@@ -39,14 +39,14 @@ pub struct Computer<'a> {
 
     status_flag: bool,
 
-    ports: [DevicePort<'a, PORT_BITS>; NUM_PORTS],
-    pins: [DevicePin<'a>; NUM_PINS],
+    ports: [DevicePort<PORT_BITS>; NUM_PORTS],
+    pins: [DevicePin; NUM_PINS],
 
     program_memory: ReadOnlyMemory<INSTRUCTION_BITS, PROGRAM_MEMORY_SIZE>,
     working_memory: ReadWriteMemory<WORKING_BITS, WORKING_MEMORY_SIZE>,
 }
 
-impl<'a> Device for Computer<'a> {
+impl Device for Computer {
     fn tick(&mut self) {
         let inst_bits = self.fetch();
         self.program_counter.increment();
@@ -55,7 +55,7 @@ impl<'a> Device for Computer<'a> {
     }
 }
 
-impl<'a> Computer<'a> {
+impl Computer {
     pub fn with_program(program: [U<INSTRUCTION_BITS>; PROGRAM_MEMORY_SIZE]) -> Self {
         Computer {
             alu: ArithmeticLogicUnit::new(),
@@ -184,12 +184,12 @@ impl<'a> Computer<'a> {
         }
     }
 
-    pub fn get_port(&mut self, id: U<PORT_INDEX_BITS>) -> &mut DevicePort<'a, PORT_BITS> {
+    pub fn get_port(&mut self, id: U<PORT_INDEX_BITS>) -> &mut DevicePort<PORT_BITS> {
         let id_u8: u8 = id.into();
         &mut self.ports[id_u8 as usize]
     }
 
-    pub fn get_pin(&mut self, id: U<PIN_INDEX_BITS>) -> &mut DevicePin<'a> {
+    pub fn get_pin(&mut self, id: U<PIN_INDEX_BITS>) -> &mut DevicePin {
         let id_u8: u8 = id.into();
         &mut self.pins[id_u8 as usize]
     }

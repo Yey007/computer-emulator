@@ -1,27 +1,28 @@
-use std::cell::RefCell;
-
-pub struct NotifCell<T> {
-    inner: RefCell<T>,
+pub struct Store<T> {
+    value: T,
     listeners: Vec<Box<dyn Fn(T)>>
 }
 
-impl<T> NotifCell<T> {
+impl<T: Clone> Store<T> {
     pub fn new(inner: T) -> Self {
-        NotifCell {
-            inner: RefCell::new(inner),
+        Store {
+            value: inner,
             listeners: Vec::new()
         }
     }
 
     pub fn get(&self) -> T {
-        self.inner.borrow().clone()
+        self.value.clone()
     }
 
-    pub fn set(&self, value: T) {
-        self.inner.replace(value);
+    pub fn set(&mut self, value: T) {
+        self.value = value;
+        for listener in self.listeners.iter() {
+            listener(self.value.clone())
+        }
     }
     
-    pub fn on_change(&mut self, listener: Box<dyn Fn(T)>) {
-        self.listeners.push(listener);
+    pub fn on_change<F>(&mut self, listener: F) where F: Fn(T) + 'static {
+        self.listeners.push(Box::new(listener));
     }
 }
