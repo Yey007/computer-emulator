@@ -6,9 +6,7 @@ use std::fs::File;
 use std::io;
 use std::io::Read;
 use std::path::Path;
-use lazy_static::lazy_static;
 use crate::connectable::Connectable;
-use crate::connectable::device_port::DevicePort;
 use crate::connectable::spliter::Spliter;
 use crate::device::console::Console;
 use crate::simulation::run_simulation;
@@ -19,7 +17,7 @@ mod instruction;
 mod connectable;
 mod un;
 mod simulation;
-mod notif_cell;
+mod store;
 
 fn load_program_from_file(path: &Path) -> Result<[u8; PROGRAM_MEMORY_SIZE], io::Error> {
     let mut f = File::open(path)?;
@@ -43,27 +41,21 @@ fn main() {
         0b00000000,
     ].map(|e| (e as u8).into()));
 
-    let splitter: Spliter<4, 2> = Spliter::new();
-    let mut p1: DevicePort<4> = DevicePort::new();
-    let mut p2: DevicePort<2> = DevicePort::new();
-    let mut p3: DevicePort<6> = DevicePort::new();
+    let mut console = Console::new();
 
-    // p1.connect_to(&splitter.as_low_end());
-    // p2.connect_to(&splitter.as_high_end());
-    p3.connect_to(&splitter);
+    let mut splitter = Spliter::<4, 4>::new();
+    let computer_port1 = computer.get_port(0u8.into());
+    computer_port1.connect_to(&splitter.as_low_end());
 
-    // let mut console = Console::new();
-    //
-    // let computer_port1 = computer.get_port(0u8.into());
-    // let computer_port2 = computer.get_port(1u8.into());
-    // let computer_pin = computer.get_pin(0u8.into());
-    // let ascii_port = console.ascii_port();
-    // let write_pin = console.write_pin();
-    //
-    // computer_port1.connect_to(computer_port2);
-    // computer_port2.connect_to(computer_port1);
-    //
-    // write_pin.connect_to(computer_pin);
-    //
-    run_simulation(vec![Box::new(computer)]);
+    let computer_port2 = computer.get_port(1u8.into());
+    computer_port2.connect_to(&splitter.as_high_end());
+
+    let ascii_port = console.ascii_port();
+    ascii_port.connect_to(&splitter);
+
+    let computer_pin = computer.get_pin(0u8.into());
+    let write_pin = console.write_pin();
+    write_pin.connect_to(computer_pin);
+
+    run_simulation(vec![Box::new(computer)], None);
 }

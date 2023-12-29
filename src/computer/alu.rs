@@ -14,10 +14,6 @@ impl ArithmeticLogicUnit {
         }
     }
 
-    pub fn accumulator(&self) -> &Register<WORKING_BITS> {
-        self.accumulator.borrow()
-    }
-
     pub fn accumulator_mut(&mut self) -> &mut Register<WORKING_BITS> {
         self.accumulator.borrow_mut()
     }

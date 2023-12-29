@@ -27,20 +27,16 @@ impl<const N: usize> U<N> where [(); bytes_to_store_bits!(N)]: Sized {
         }
     }
 
+    pub fn max() -> Self <> {
+        U {
+            value: change_bits([u8::MAX; bytes_to_store_bits!(N)])
+        }
+    }
+
     pub fn change_bits<const M: usize>(&self) -> U<M> where [(); bytes_to_store_bits!(M)]: Sized {
         U {
             value: change_bits(self.value)
         }
-    }
-
-    pub fn split<const LOWER: usize, const UPPER: usize>(&self) -> (U<LOWER>, U<UPPER>)
-        where [(); bytes_to_store_bits!(LOWER)]: Sized,
-              [(); bytes_to_store_bits!(UPPER)]: Sized
-    {
-        let lower = self.change_bits();
-        let upper = (*self >> (LOWER as u128).into()).change_bits();
-
-        (lower, upper)
     }
 }
 
@@ -446,18 +442,5 @@ mod tests {
         let b: U<12> = 0b0110_11000111u16.into();
         assert_eq!(b << 3u8.into(), 0b0110_00111000u16.into());
         assert_eq!(b << 9u8.into(), 0b1110_00000000u16.into());
-    }
-
-    #[test]
-    fn split() {
-        let a: U<8> = 0b01101001u8.into();
-        let (a_lower, a_upper) = a.split::<4, 4>();
-        assert_eq!(a_lower, 0b1001u8.into());
-        assert_eq!(a_upper, 0b0110u8.into());
-
-        let b: U<12> = 0b0110_11000111u16.into();
-        let (b_lower, b_upper) = b.split::<5, 7>();
-        assert_eq!(b_lower, 0b00111u16.into());
-        assert_eq!(b_upper, 0b0110_110u16.into());
     }
 }

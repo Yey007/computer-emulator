@@ -15,10 +15,6 @@ impl<const N: usize, const M: usize> ReadWriteMemory<N, M>
         }
     }
 
-    pub fn with_values(values: [U<N>; M]) -> Self {
-        ReadWriteMemory { memory: values }
-    }
-
     pub fn read(&self, location: U<{ bits_to_index_length!(M) }>) -> U<N> {
         self.memory[u128::from(location) as usize]
     }

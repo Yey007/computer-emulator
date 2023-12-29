@@ -47,11 +47,11 @@ pub struct Computer {
 }
 
 impl Device for Computer {
-    fn tick(&mut self) {
+    fn tick(&mut self, tick: u32) {
         let inst_bits = self.fetch();
         self.program_counter.increment();
         let inst = self.decode(inst_bits);
-        self.execute(inst);
+        self.execute(inst, tick);
     }
 }
 
@@ -88,7 +88,7 @@ impl Computer {
         decode_instruction(instruction)
     }
 
-    fn execute(&mut self, instruction: Instruction) {
+    fn execute(&mut self, instruction: Instruction, tick: u32) {
         match instruction {
             Instruction::NOP => (),
             Instruction::STR { register_id } => {
@@ -135,10 +135,10 @@ impl Computer {
             Instruction::OUT { port_id } => {
                 let val = self.z_register.load();
                 let port = self.get_port(port_id);
-                port.write(val);
+                port.write(val, tick);
             }
-            Instruction::SEP { pin_id } => self.get_pin(pin_id).write(1u8.into()),
-            Instruction::RSP { pin_id } => self.get_pin(pin_id).write(0u8.into()),
+            Instruction::SEP { pin_id } => self.get_pin(pin_id).write(1u8.into(), tick),
+            Instruction::RSP { pin_id } => self.get_pin(pin_id).write(0u8.into(), tick),
             Instruction::ADD { register_id } => {
                 let value = self.get_register(register_id).load();
                 self.alu.add(value)
