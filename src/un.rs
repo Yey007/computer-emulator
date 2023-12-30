@@ -23,7 +23,7 @@ impl<const N: usize> U<N> where [(); bytes_to_store_bits!(N)]: Sized {
 
     pub fn with_value(value: [u8; bytes_to_store_bits!(N)]) -> Self <> {
         U {
-            value
+            value: change_bits(value)
         }
     }
 

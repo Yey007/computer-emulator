@@ -2,26 +2,41 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use crate::bytes_to_store_bits;
 use crate::connectable::Connectable;
+use crate::device::Device;
 use crate::store::Store;
 use crate::un::U;
 
 pub struct DevicePort<const N: usize> where [(); bytes_to_store_bits!(N)]: Sized {
     store: Rc<RefCell<Store<U<N>>>>,
+    write_val: U<N>,
+    writing: bool
+}
+
+impl<const N: usize> Device for DevicePort<N> where [(); bytes_to_store_bits!(N)]: Sized {
+    fn tick(&mut self, tick: u32) {
+        if self.writing {
+            self.store.borrow_mut().set(self.write_val, tick);
+        }
+    }
 }
 
 impl<const N: usize> DevicePort<N> where [(); bytes_to_store_bits!(N)]: Sized {
     pub fn new() -> Self<> {
         DevicePort {
             store: Rc::new(RefCell::new(Store::new(0u8.into()))),
+            write_val: 0u8.into(),
+            writing: false
         }
     }
 
-    pub fn read(&self) -> U<N> {
+    pub fn read(&mut self) -> U<N> {
+        self.writing = false;
         self.store.borrow().get()
     }
 
-    pub fn write(&mut self, value: U<N>, tick: u32) {
-        self.store.borrow_mut().set(value, tick);
+    pub fn write(&mut self, value: U<N>) {
+        self.write_val = value;
+        self.writing = true;
     }
 }
 

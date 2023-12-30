@@ -27,7 +27,7 @@ impl Console {
 }
 
 impl Device for Console {
-    fn tick(&mut self, _tick: u32) {
+    fn tick(&mut self, tick: u32) {
         let new = self.write.read() == 1u8.into();
 
         if new && !self.previous_write {
@@ -35,6 +35,9 @@ impl Device for Console {
             print!("{}", ascii as char)
         }
 
-        self.previous_write = new
+        self.previous_write = new;
+
+        self.ascii.tick(tick);
+        self.write.tick(tick);
     }
 }

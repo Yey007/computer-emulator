@@ -29,7 +29,7 @@ fn load_program_from_file(path: &Path) -> Result<[u8; PROGRAM_MEMORY_SIZE], io::
 fn main() {
     // let program = load_program_from_file(Path::new("./programs/program")).unwrap();
     let mut computer = Computer::with_program([
-        0b11000001, 0b11010001, 0b00010101, 0b01110011, 0b01000100, 0b00111000, 0b10000110,
+        0b11110100, 0b01000101, 0b11111000, 0b01000100, 0b01001000, 0b01010000, 0b00000000,
         0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
         0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
         0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
@@ -57,5 +57,5 @@ fn main() {
     let write_pin = console.write_pin();
     write_pin.connect_to(computer_pin);
 
-    run_simulation(vec![Box::new(computer)], None);
+    run_simulation(vec![Box::new(computer), Box::new(console), Box::new(splitter)], None);
 }
