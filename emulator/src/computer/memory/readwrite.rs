@@ -1,5 +1,6 @@
-use crate::{bits_to_index_length, bytes_to_store_bits};
-use crate::un::U;
+use common::bytes_to_store_bits;
+use common::un::U;
+use crate::bits_to_index_length;
 
 pub struct ReadWriteMemory<const STORED_BITS: usize, const MEMORY_SIZE: usize>
     where [(); bytes_to_store_bits!(STORED_BITS)]: Sized

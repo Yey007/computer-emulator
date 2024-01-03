@@ -1,8 +1,7 @@
 use bitmatch::bitmatch;
-use crate::computer::{REGISTER_INDEX_BITS, WORKING_BITS, PORT_INDEX_BITS, PIN_INDEX_BITS, PC_BITS, PA_BITS, INSTRUCTION_BITS};
+use crate::architecture::*;
 use crate::un::U;
 
-// TODO: update instruction set
 #[derive(Debug, PartialEq)]
 pub enum Instruction {
     NOP,

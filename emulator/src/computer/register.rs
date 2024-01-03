@@ -1,5 +1,5 @@
-use crate::bytes_to_store_bits;
-use crate::un::U;
+use common::bytes_to_store_bits;
+use common::un::U;
 
 pub struct Register<const N: usize> where [(); bytes_to_store_bits!(N)]: Sized {
     value: U<N>,

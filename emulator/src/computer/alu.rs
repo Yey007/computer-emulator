@@ -1,7 +1,7 @@
 use crate::computer::register::Register;
 use crate::computer::WORKING_BITS;
 use std::borrow::{BorrowMut};
-use crate::un::U;
+use common::un::U;
 
 pub struct ArithmeticLogicUnit {
     accumulator: Register<WORKING_BITS>,

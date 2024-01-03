@@ -1,23 +1,19 @@
 #![feature(generic_const_exprs)]
 #![feature(generic_arg_infer)]
 
-use crate::computer::{Computer, PROGRAM_MEMORY_SIZE};
 use std::fs::File;
 use std::io;
 use std::io::Read;
 use std::path::Path;
-use crate::connectable::Connectable;
-use crate::connectable::spliter::Spliter;
+use common::architecture::PROGRAM_MEMORY_SIZE;
+use device::connectable::Connectable;
+use device::connectable::spliter::Spliter;
+use crate::computer::Computer;
 use crate::device::console::Console;
-use crate::simulation::run_simulation;
+use crate::device::Device;
 
 mod computer;
 mod device;
-mod instruction;
-mod connectable;
-mod un;
-mod simulation;
-mod store;
 
 fn load_program_from_file(path: &Path) -> Result<[u8; PROGRAM_MEMORY_SIZE], io::Error> {
     let mut f = File::open(path)?;
@@ -27,7 +23,7 @@ fn load_program_from_file(path: &Path) -> Result<[u8; PROGRAM_MEMORY_SIZE], io::
 }
 
 fn main() {
-    // let program = load_program_from_file(Path::new("./programs/program")).unwrap();
+    // let program = load_program_from_file(Path::new("./programs/assembled/hello_world")).unwrap();
     let mut computer = Computer::with_program([
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -80,4 +76,20 @@ fn main() {
     write_pin.connect_to(computer_pin);
 
     run_simulation(vec![Box::new(computer), Box::new(console), Box::new(splitter)], None);
+}
+
+fn run_simulation(mut devices: Vec<Box<dyn Device>>, ticks: Option<u32>) {
+    let mut tick: u32 = 0;
+    let ticks = ticks.unwrap_or(u32::MAX);
+
+    loop {
+        if tick >= ticks {
+            break;
+        }
+
+        for device in devices.iter_mut() {
+            device.tick(tick)
+        }
+        tick += 1;
+    }
 }

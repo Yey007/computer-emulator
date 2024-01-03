@@ -1,10 +1,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::bytes_to_store_bits;
-use crate::connectable::Connectable;
+use common::bytes_to_store_bits;
+use common::un::U;
+use crate::device::connectable::Connectable;
 use crate::device::Device;
-use crate::store::Store;
-use crate::un::U;
+use crate::device::store::Store;
 
 pub struct DevicePort<const N: usize> where [(); bytes_to_store_bits!(N)]: Sized {
     store: Rc<RefCell<Store<U<N>>>>,

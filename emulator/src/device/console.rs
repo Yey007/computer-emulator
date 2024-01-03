@@ -1,5 +1,5 @@
-use crate::connectable::device_pin::DevicePin;
-use crate::connectable::device_port::DevicePort;
+use crate::device::connectable::device_pin::DevicePin;
+use crate::device::connectable::device_port::DevicePort;
 use crate::device::Device;
 
 pub struct Console {

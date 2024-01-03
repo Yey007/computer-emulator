@@ -1,8 +1,8 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::bytes_to_store_bits;
-use crate::store::Store;
-use crate::un::U;
+use common::bytes_to_store_bits;
+use common::un::U;
+use crate::device::store::Store;
 
 pub mod device_port;
 pub mod device_pin;
