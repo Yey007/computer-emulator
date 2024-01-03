@@ -24,6 +24,8 @@ pub struct Computer {
     program_counter: Register<PC_BITS>,
     page_address: Register<PA_BITS>,
     page_buffer: U<PA_BITS>,
+    subroutine_jump_flag: bool,
+    subroutine_ret_addr: U<PC_BITS>,
 
     status_flag: bool,
 
@@ -61,6 +63,8 @@ impl Computer {
             program_counter: Register::new(),
             page_address: Register::new(),
             page_buffer: 0u8.into(),
+            subroutine_jump_flag: false,
+            subroutine_ret_addr: 0u8.into(),
             status_flag: false,
             ports: [
                 DevicePort::new(),
@@ -167,12 +171,21 @@ impl Computer {
                 self.status_flag = self.alu.les(value)
             }
             Instruction::BRN { immediate } => {
-                self.page_address.store(self.page_buffer);
+                if !self.status_flag {
+                    return;
+                }
+
+                if !self.subroutine_jump_flag {
+                    self.page_address.store(self.page_buffer);
+                }
                 self.program_counter.store(immediate)
             }
             Instruction::LPB { immediate } => self.page_buffer = immediate,
             Instruction::SSF => self.status_flag = true,
             Instruction::RSF => self.status_flag = false,
+            Instruction::SSJ => self.subroutine_jump_flag = true,
+            Instruction::RSJ => self.subroutine_jump_flag = false,
+            Instruction::RET => self.program_counter.store(self.subroutine_ret_addr)
         }
     }
 

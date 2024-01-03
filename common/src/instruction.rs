@@ -64,6 +64,9 @@ pub enum Instruction {
     LPB {
         immediate: U<PA_BITS>
     },
+    SSJ,
+    RSJ,
+    RET,
     SSF,
     RSF,
 }
@@ -135,6 +138,9 @@ pub fn decode_instruction(binary: U<INSTRUCTION_BITS>) -> Instruction {
         },
         "00000011" => Instruction::SSF,
         "00000010" => Instruction::RSF,
+        "00000001" => Instruction::SSJ,
+        "00000111" => Instruction::RSJ,
+        "00001000" => Instruction::RET,
         _ => Instruction::NOP,
     }
 }
