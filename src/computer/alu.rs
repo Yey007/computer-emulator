@@ -1,6 +1,6 @@
 use crate::computer::register::Register;
 use crate::computer::WORKING_BITS;
-use std::borrow::{Borrow, BorrowMut};
+use std::borrow::{BorrowMut};
 use crate::un::U;
 
 pub struct ArithmeticLogicUnit {
@@ -57,6 +57,7 @@ impl ArithmeticLogicUnit {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::borrow::Borrow;
 
     fn initialize_alu() -> ArithmeticLogicUnit {
         let mut alu = ArithmeticLogicUnit::new();

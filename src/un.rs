@@ -100,7 +100,7 @@ impl<const N: usize> Sub for U<N> where [(); bytes_to_store_bits!(N)]: Sized {
 
 impl<const N: usize> SubAssign for U<N> where [(); bytes_to_store_bits!(N)]: Sized {
     fn sub_assign(&mut self, rhs: Self) {
-        *self = *self + rhs
+        *self = *self - rhs
     }
 }
 

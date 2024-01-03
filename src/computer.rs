@@ -15,18 +15,19 @@ use crate::un::U;
 
 pub const WORKING_BITS: usize = 4;
 pub const PC_BITS: usize = 6;
+pub const PA_BITS: usize = 4;
 pub const INSTRUCTION_BITS: usize = 8;
 pub const PORT_BITS: usize = 4;
 
 pub const NUM_REGISTERS: usize = 4;
 pub const NUM_PORTS: usize = 4;
-pub const NUM_PINS: usize = 8;
+pub const NUM_PINS: usize = 4;
 
 pub const REGISTER_INDEX_BITS: usize = NUM_REGISTERS.ilog2() as usize;
 pub const PORT_INDEX_BITS: usize = NUM_PORTS.ilog2() as usize;
-pub const PIN_INDEX_BITS: usize = NUM_PORTS.ilog2() as usize;
+pub const PIN_INDEX_BITS: usize = NUM_PINS.ilog2() as usize;
 
-pub const PROGRAM_MEMORY_SIZE: usize = 2usize.pow(PC_BITS as u32);
+pub const PROGRAM_MEMORY_SIZE: usize = 2usize.pow(PC_BITS as u32) * 2usize.pow(PA_BITS as u32);
 pub const WORKING_MEMORY_SIZE: usize = 2usize.pow(2 * WORKING_BITS as u32);  // two registers used to index
 
 pub struct Computer {
@@ -35,7 +36,10 @@ pub struct Computer {
     x_register: Register<WORKING_BITS>,
     y_register: Register<WORKING_BITS>,
     z_register: Register<WORKING_BITS>,
+
     program_counter: Register<PC_BITS>,
+    page_address: Register<PA_BITS>,
+    page_buffer: U<PA_BITS>,
 
     status_flag: bool,
 
@@ -52,11 +56,11 @@ impl Device for Computer {
         self.program_counter.increment();
         let inst = self.decode(inst_bits);
         self.execute(inst);
-        
+
         for port in self.ports.iter_mut() {
             port.tick(tick);
         }
-        
+
         for pin in self.pins.iter_mut() {
             pin.tick(tick);
         }
@@ -71,6 +75,8 @@ impl Computer {
             y_register: Register::new(),
             z_register: Register::new(),
             program_counter: Register::new(),
+            page_address: Register::new(),
+            page_buffer: 0u8.into(),
             status_flag: false,
             ports: [
                 DevicePort::new(),
@@ -80,7 +86,6 @@ impl Computer {
             ],
             pins: [
                 DevicePin::new(), DevicePin::new(), DevicePin::new(), DevicePin::new(),
-                DevicePin::new(), DevicePin::new(), DevicePin::new(), DevicePin::new()
             ],
             program_memory: ReadOnlyMemory::with_values(program),
             working_memory: ReadWriteMemory::new(),
@@ -88,7 +93,9 @@ impl Computer {
     }
 
     fn fetch(&self) -> U<INSTRUCTION_BITS> {
-        let addr = self.program_counter.load();
+        let pc = self.program_counter.load();
+        let pa = self.page_address.load();
+        let addr = (pa.change_bits() << (PC_BITS as u128).into()) | pc.change_bits();
         self.program_memory.read(addr)
     }
 
@@ -103,11 +110,11 @@ impl Computer {
                 let addr = self.decode_xy();
                 let register = self.get_register(register_id);
                 let value = register.load();
-                self.working_memory.write(addr.into(), value)
+                self.working_memory.write(addr, value)
             }
             Instruction::LOD { register_id } => {
                 let addr = self.decode_xy();
-                let value = self.working_memory.read(addr.into());
+                let value = self.working_memory.read(addr);
                 let register = self.get_register(register_id);
                 register.store(value)
             }
@@ -175,7 +182,11 @@ impl Computer {
                 let value = self.get_register(register_id).load();
                 self.status_flag = self.alu.les(value)
             }
-            Instruction::BRN { immediate } => self.program_counter.store(immediate),
+            Instruction::BRN { immediate } => {
+                self.page_address.store(self.page_buffer);
+                self.program_counter.store(immediate)
+            }
+            Instruction::LPB { immediate } => self.page_buffer = immediate,
             Instruction::SSF => self.status_flag = true,
             Instruction::RSF => self.status_flag = false,
         }
@@ -188,7 +199,7 @@ impl Computer {
             1 => self.x_register.borrow_mut(),
             2 => self.y_register.borrow_mut(),
             3 => self.z_register.borrow_mut(),
-            _ => panic!("Max value of u2 exceeded."),
+            _ => panic!("Max register id exceeded."),
         }
     }
 
@@ -202,11 +213,11 @@ impl Computer {
         &mut self.pins[id_u8 as usize]
     }
 
-    fn decode_xy(&self) -> u8 {
-        let x: u8 = self.x_register.load().into();
-        let y: u8 = self.y_register.load().into();
+    fn decode_xy(&self) -> U<{ 2 * WORKING_BITS }> {
+        let x = self.x_register.load().change_bits();
+        let y = self.y_register.load().change_bits();
 
-        let x_shifted = x << (u8::BITS / 2);
+        let x_shifted = x << (WORKING_BITS as u128).into();
         x_shifted | y
     }
 }

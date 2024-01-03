@@ -1,7 +1,8 @@
 use bitmatch::bitmatch;
-use crate::computer::{REGISTER_INDEX_BITS, WORKING_BITS, PORT_INDEX_BITS, PIN_INDEX_BITS, PC_BITS, INSTRUCTION_BITS};
+use crate::computer::{REGISTER_INDEX_BITS, WORKING_BITS, PORT_INDEX_BITS, PIN_INDEX_BITS, PC_BITS, PA_BITS, INSTRUCTION_BITS};
 use crate::un::U;
 
+// TODO: update instruction set
 #[derive(Debug, PartialEq)]
 pub enum Instruction {
     NOP,
@@ -61,6 +62,9 @@ pub enum Instruction {
     BRN {
         immediate: U<PC_BITS>,
     },
+    LPB {
+        immediate: U<PA_BITS>
+    },
     SSF,
     RSF,
 }
@@ -71,64 +75,67 @@ pub fn decode_instruction(binary: U<INSTRUCTION_BITS>) -> Instruction {
 
     #[bitmatch]
     match a {
-        "000001rr" => Instruction::STR {
+        "001000rr" => Instruction::STR {
             register_id: r.into(),
         },
-        "000010rr" => Instruction::LOD {
+        "001001rr" => Instruction::LOD {
             register_id: r.into(),
         },
         "11rrxxxx" => Instruction::LDI {
             register_id: r.into(),
             immediate: x.into(),
         },
-        "000011rr" => Instruction::INC {
+        "001010rr" => Instruction::INC {
             register_id: r.into(),
         },
-        "000100rr" => Instruction::DEC {
+        "001011rr" => Instruction::DEC {
             register_id: r.into(),
         },
-        "0111rrkk" => Instruction::MOV {
+        "0100rrkk" => Instruction::MOV {
             register_from_id: r.into(),
             register_to_id: k.into(),
         },
-        "010000pp" => Instruction::INP {
+        "011100pp" => Instruction::INP {
             port_id: p.into(),
         },
-        "010001pp" => Instruction::OUT {
+        "011101pp" => Instruction::OUT {
             port_id: p.into(),
         },
-        "01001qqq" => Instruction::SEP {
+        "011111qq" => Instruction::SEP {
             pin_id: q.into(),
         },
-        "01010qqq" => Instruction::RSP {
+        "011110qq" => Instruction::RSP {
             pin_id: q.into(),
         },
-        "000101rr" => Instruction::ADD {
+        "010100rr" => Instruction::ADD {
             register_id: r.into(),
         },
-        "000110rr" => Instruction::SUB {
+        "010101rr" => Instruction::SUB {
             register_id: r.into(),
         },
-        "001000rr" => Instruction::BOR {
+        "010110rr" => Instruction::BOR {
             register_id: r.into(),
         },
-        "001001rr" => Instruction::AND {
+        "010111rr" => Instruction::AND {
             register_id: r.into(),
         },
-        "001011rr" => Instruction::CMP {
+        "011010rr" => Instruction::CMP {
             register_id: r.into(),
         },
-        "001100rr" => Instruction::GRT {
+        "011000rr" => Instruction::GRT {
             register_id: r.into(),
         },
-        "001101rr" => Instruction::LES {
+        "011001rr" => Instruction::LES {
             register_id: r.into(),
         },
         "10xxxxxx" => Instruction::BRN {
             immediate: x.into(),
         },
-        "00111000" => Instruction::SSF,
-        "00111100" => Instruction::RSF,
+        "0001xxxx" => Instruction::LPB {
+            immediate: x.into(),
+        },
+        "00000011" => Instruction::SSF,
+        "00000010" => Instruction::RSF,
         _ => Instruction::NOP,
     }
 }
@@ -139,13 +146,13 @@ mod tests {
 
     #[test]
     fn no_operands() {
-        assert_eq!(decode_instruction(0b00111000u8.into()), Instruction::SSF)
+        assert_eq!(decode_instruction(0b00000011u8.into()), Instruction::SSF)
     }
 
     #[test]
     fn register_operand() {
         assert_eq!(
-            decode_instruction(0b00000111u8.into()),
+            decode_instruction(0b00100011u8.into()),
             Instruction::STR {
                 register_id: 0b11u8.into()
             }
@@ -155,7 +162,7 @@ mod tests {
     #[test]
     fn two_register_operands() {
         assert_eq!(
-            decode_instruction(0b1110110u8.into()),
+            decode_instruction(0b01000110u8.into()),
             Instruction::MOV {
                 register_from_id: 0b01u8.into(),
                 register_to_id: 0b10u8.into()
