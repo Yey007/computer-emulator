@@ -41,34 +41,28 @@ impl Lexer {
     }
 
     pub fn lex(&mut self) {
-        loop {
-            // TODO: and this is also annoying. We should take "make invalid states unrepresentable" seriously?
-            if let Some(current) = self.current_char() {
-                match current {
-                    '\n' => self.push_buffer_and_current(current, TokenKind::Newline),
-                    c if c.is_whitespace() => self.push_buffer(),
-                    ':' => self.push_buffer_and_current(current, TokenKind::Colon),
-                    ',' => self.push_buffer_and_current(current, TokenKind::Comma),
-                    ';' => self.handle_comment(),
-                    c => {
-                        // TODO: this is hacky
-                        if self.buffer.is_empty() {
-                            self.buffer_start_location = self.location
-                        }
-                        self.buffer.push(c)
-                    }
-                };
-            } else {
-                self.push_buffer();
-                break;
-            }
+        let mut current = self.current_char();
 
-            // TODO: this is annoying too
-            if !self.advance() {
-                self.push_buffer();
-                break;
-            }
+        while let Some(char) = current {
+            match char {
+                '\n' => self.push_buffer_and_current(char, TokenKind::Newline),
+                c if c.is_whitespace() => self.push_buffer(),
+                ':' => self.push_buffer_and_current(char, TokenKind::Colon),
+                ',' => self.push_buffer_and_current(char, TokenKind::Comma),
+                ';' => self.handle_comment(),
+                c => {
+                    // TODO: this is hacky
+                    if self.buffer.is_empty() {
+                        self.buffer_start_location = self.location
+                    }
+                    self.buffer.push(c)
+                }
+            };
+
+            current = self.advance();
         }
+
+        self.push_buffer()
     }
 
     fn push_buffer_and_current(&mut self, current: char, kind: TokenKind) {
@@ -83,9 +77,8 @@ impl Lexer {
     }
 
     fn handle_comment(&mut self) {
-        while self.advance() {
-            // TODO: CRLF
-            if let Some('\n') = self.current_char() {
+        while let Some(current) = self.advance() {
+            if current == '\n' {
                 return;
             }
         }
@@ -125,22 +118,16 @@ impl Lexer {
         self.buffer.clear();
     }
 
-    fn advance(&mut self) -> bool {
-        let current = self.current_char();
+    fn advance(&mut self) -> Option<char> {
+        let current = self.current_char()?;
 
-        match current {
-            Some('\n') =>
-                {
-                    self.location.advance_line();
-                    true
-                }
-            Some(_) =>
-                {
-                    self.location.advance_col();
-                    true
-                }
-            None => false,
+        if current == '\n' {
+            self.location.advance_line()
+        } else {
+            self.location.advance_col()
         }
+
+        self.current_char()
     }
 
     fn current_char(&self) -> Option<char> {
