@@ -1,8 +1,11 @@
 mod lexer;
 mod location;
+mod parser;
 
 use std::fs::File;
 use std::io::Read;
+use crate::lexer::Lexer;
+use crate::parser::Parser;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -25,8 +28,10 @@ fn main() {
         Err(err) => panic!("Could not read input file {}. Cause: {}", input_filename, err),
     };
 
-    let mut lexer = lexer::Lexer::new(input);
-    lexer.lex();
+    let mut lexer = Lexer::new(input);
+    let tokens = lexer.lex();
 
+    let mut parser = Parser::new(tokens);
+    
     println!("hi")
 }

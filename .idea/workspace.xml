@@ -10,6 +10,8 @@
     <list default="true" id="d6596c9d-65af-4718-9856-113efb9213ac" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assembler/src/lexer.rs" beforeDir="false" afterPath="$PROJECT_DIR$/assembler/src/lexer.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assembler/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/assembler/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/programs/out" beforeDir="false" afterPath="$PROJECT_DIR$/assembler/src/parser.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -132,7 +134,7 @@
       <updated>1704284691124</updated>
       <workItem from="1704284693004" duration="4392000" />
       <workItem from="1704314509289" duration="27464000" />
-      <workItem from="1704450044021" duration="1051000" />
+      <workItem from="1704450044021" duration="4625000" />
     </task>
     <servers />
   </component>
@@ -141,16 +143,5 @@
   </component>
   <component name="UnknownFeatures">
     <option featureType="com.intellij.fileTypeFactory" implementationName="*.asm" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/assembler/src/main.rs</url>
-          <line>30</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>

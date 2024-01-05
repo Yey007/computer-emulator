@@ -40,7 +40,7 @@ impl Lexer {
         }
     }
 
-    pub fn lex(&mut self) {
+    pub fn lex(&mut self) -> &Vec<Token> {
         let mut current = self.current_char();
 
         while let Some(char) = current {
@@ -62,7 +62,8 @@ impl Lexer {
             current = self.advance();
         }
 
-        self.push_buffer()
+        self.push_buffer();
+        &self.tokens
     }
 
     fn push_buffer_and_current(&mut self, current: char, kind: TokenKind) {
