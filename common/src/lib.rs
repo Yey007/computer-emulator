@@ -4,3 +4,4 @@
 pub mod instruction;
 pub mod un;
 pub mod architecture;
+pub mod bit_array;
