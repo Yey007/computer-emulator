@@ -1,5 +1,5 @@
-use std::cmp::{min, Ordering};
-use std::ops::{Add, AddAssign, BitAnd, BitOr, BitXor, Not, Shl, Shr, Sub, SubAssign};
+use std::cmp::{Ordering};
+use std::ops::{Add, AddAssign, BitAnd, BitOr, Not, Shl, Shr, Sub, SubAssign};
 use crate::bit_array::BitArray;
 
 #[macro_export]
@@ -28,9 +28,15 @@ impl<const N: usize> U<N> where [(); bytes_to_store_bits!(N)]: Sized {
         }
     }
 
-    pub fn max() -> Self <> {
+    pub fn max() -> Self {
         U {
             value: BitArray::ones()
+        }
+    }
+
+    pub fn min() -> Self {
+        U {
+            value: BitArray::zeroes()
         }
     }
 
@@ -134,7 +140,7 @@ impl<const N: usize> Shl<usize> for U<N> where [(); bytes_to_store_bits!(N)]: Si
     type Output = U<N>;
 
     fn shl(mut self, rhs: usize) -> Self::Output {
-        for i in 0..self.value.len() {
+        for i in (0..self.value.len()).rev() {
             if i < rhs {
                 self.value.set(i, false);
             } else {
@@ -222,23 +228,23 @@ mod tests {
 
     #[test]
     fn from_primitive() {
-        // let a: U<128> = u128::MAX.into();
-        // assert_eq!(a.value, BitArray::from_array([u8::MAX; 128 / 8]));
-        //
-        // let b: U<16> = u32::MAX.into();
-        // assert_eq!(b.value, [u8::MAX, u8::MAX]);
-        //
-        // let c: U<12> = u16::MAX.into();
-        // assert_eq!(c.value, [u8::MAX, 0b00001111]);
-        //
-        // let d: U<4> = 2u8.into();
-        // assert_eq!(d.value, [2]);
-        //
-        // let e: U<9> = 10u8.into();
-        // assert_eq!(e.value, [0b00001010, 0]);
-        //
-        // let f: U<31> = u64::MAX.into();
-        // assert_eq!(f.value, [u8::MAX, u8::MAX, u8::MAX, 0b01111111])
+        let a: U<128> = u128::MAX.into();
+        assert_eq!(a.value, BitArray::from_array([u8::MAX; 128 / 8]));
+
+        let b: U<16> = u32::MAX.into();
+        assert_eq!(b.value, BitArray::from_array([u8::MAX, u8::MAX]));
+
+        let c: U<12> = u16::MAX.into();
+        assert_eq!(c.value, BitArray::from_array([u8::MAX, 0b00001111]));
+
+        let d: U<4> = 2u8.into();
+        assert_eq!(d.value, BitArray::from_array([2]));
+
+        let e: U<9> = 10u8.into();
+        assert_eq!(e.value, BitArray::from_array([0b00001010, 0]));
+
+        let f: U<31> = u64::MAX.into();
+        assert_eq!(f.value, BitArray::from_array([u8::MAX, u8::MAX, u8::MAX, 0b01111111]))
     }
 
     #[test]
@@ -365,20 +371,20 @@ mod tests {
     #[test]
     fn shr() {
         let a: U<8> = 0b01101001u8.into();
-        assert_eq!(a >> 5u8.into(), 0b00000011u8.into());
+        assert_eq!(a >> 5usize, 0b00000011u8.into());
 
         let b: U<12> = 0b0110_11000111u16.into();
-        assert_eq!(b >> 3u8.into(), 0b0000_11011000u16.into());
-        assert_eq!(b >> 9u8.into(), 0b0000_00000011u16.into());
+        assert_eq!(b >> 3usize, 0b0000_11011000u16.into());
+        assert_eq!(b >> 9usize, 0b0000_00000011u16.into());
     }
 
     #[test]
     fn shl() {
         let a: U<8> = 0b01101001u8.into();
-        assert_eq!(a << 5u8.into(), 0b00100000u8.into());
+        assert_eq!(a << 5usize, 0b00100000u8.into());
 
         let b: U<12> = 0b0110_11000111u16.into();
-        assert_eq!(b << 3u8.into(), 0b0110_00111000u16.into());
-        assert_eq!(b << 9u8.into(), 0b1110_00000000u16.into());
+        assert_eq!(b << 3usize, 0b0110_00111000u16.into());
+        assert_eq!(b << 9usize, 0b1110_00000000u16.into());
     }
 }
