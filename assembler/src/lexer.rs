@@ -15,22 +15,22 @@ pub enum TokenKind {
     NumberLiteral { kind: NumberLiteralKind },
 }
 
-pub struct Token {
+pub struct Token<'a> {
     kind: TokenKind,
     location: Location,
-    text: String,
+    text: &'a str,
 }
 
-pub struct Lexer {
+pub struct Lexer<'a> {
     program: String,
     location: Location,
-    tokens: Vec<Token>,
+    tokens: Vec<Token<'a>>,
     buffer_start_location: Location,
     buffer: String,
 }
 
-impl Lexer {
-    pub fn new(program: String) -> Lexer {
+impl<'a> Lexer<'a> {
+    pub fn new(program: String) -> Self {
         Lexer {
             program,
             location: Location::start(),
@@ -40,7 +40,7 @@ impl Lexer {
         }
     }
 
-    pub fn lex(&mut self) -> &Vec<Token> {
+    pub fn lex(mut self) -> Vec<Token<'a>> {
         let mut current = self.current_char();
 
         while let Some(char) = current {
@@ -63,7 +63,8 @@ impl Lexer {
         }
 
         self.push_buffer();
-        &self.tokens
+
+        self.tokens
     }
 
     fn push_buffer_and_current(&mut self, current: char, kind: TokenKind) {
@@ -73,7 +74,7 @@ impl Lexer {
 
     fn push_current(&mut self, current: char, kind: TokenKind) {
         self.tokens.push(
-            Token { kind, location: self.location, text: current.to_string() }
+            Token { kind, location: self.location, text: current.to_string().as_str() }
         )
     }
 
@@ -98,11 +99,10 @@ impl Lexer {
                 _ => NumberLiteralKind::Decimal
             };
 
-            // TODO: clone avoidable here?
             let token = Token {
                 kind: TokenKind::NumberLiteral { kind },
                 location: self.buffer_start_location,
-                text: self.buffer.clone(),
+                text: self.buffer.as_str(),
             };
 
             self.tokens.push(token)
@@ -110,7 +110,7 @@ impl Lexer {
             let token = Token {
                 kind: TokenKind::Identifier,
                 location: self.buffer_start_location,
-                text: self.buffer.clone(),
+                text: self.buffer.as_str(),
             };
 
             self.tokens.push(token)
