@@ -27,6 +27,8 @@ pub struct Lexer<'a> {
     program: &'a str,
     /// The start location of the current sequence being processed. Must be <= location.
     sequence_start_location: Location,
+    /// A flag indicating that the next advancement should start a new sequence.
+    start_new_sequence: bool,
     /// The current location of the lexer in the program.
     location: Location,
     /// The tokens gathered so far.
@@ -44,16 +46,15 @@ impl<'a> Lexer<'a> {
 
         Lexer {
             program,
+            sequence_start_location: Location::start(),
+            start_new_sequence: false,
             location: Location::start(),
             tokens: vec![],
-            sequence_start_location: Location::start(),
         }
     }
 
     pub fn lex(mut self) -> Vec<Token<'a>> {
-        let mut current = self.current_char();
-
-        while let Some(char) = current {
+        while let Some(char) = self.current_char() {
             match char {
                 '\n' => self.push_sequence_and_current(TokenKind::Newline),
                 c if c.is_whitespace() => self.push_sequence(),
@@ -87,19 +88,19 @@ impl<'a> Lexer<'a> {
     fn handle_comment(&mut self) {
         while let Some(current) = self.current_char() {
             if current == '\n' {
-                return;
+                break;
             }
             self.advance()
         }
+        self.start_new_sequence = true;
     }
 
     // TODO: Should we use the sequence for all of these cases?
     fn push_sequence(&mut self) {
-        let Some(sequence) = self.current_sequence() else {
-            return;
-        };
+        let Some(sequence) = self.current_sequence() else { return; };
 
         if sequence.is_empty() {
+            self.start_new_sequence = true;
             return;
         }
 
@@ -127,7 +128,7 @@ impl<'a> Lexer<'a> {
             self.tokens.push(token);
         }
 
-        self.sequence_start_location = self.location;
+        self.start_new_sequence = true;
     }
 
     /// Advances the current location of the lexer, if possible, adjusting `self.location` accordingly.
@@ -141,6 +142,11 @@ impl<'a> Lexer<'a> {
         } else if let Some(_) = current {
             self.location.advance_col()
         }
+
+        if self.start_new_sequence {
+            self.sequence_start_location = self.location;
+            self.start_new_sequence = false
+        }
     }
 
     /// Returns the current sequence being processed. Will return `None` if the lexer has finished. The returned string
@@ -149,8 +155,6 @@ impl<'a> Lexer<'a> {
     fn current_sequence(&self) -> Option<&'a str> {
         let start = self.sequence_start_location.index;
         let end = self.location.index;
-
-        assert!(start <= end);
 
         if end > self.program.len() {
             return None;
