@@ -1,6 +1,5 @@
 use std::num::ParseIntError;
 use crate::lexer::{NumberLiteralKind, Token, TokenKind};
-use crate::parser::ParseErrorKind::UnknownInstruction;
 
 pub enum InstructionKind {
     NOP,
