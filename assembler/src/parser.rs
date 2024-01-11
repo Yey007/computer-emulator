@@ -1,3 +1,4 @@
+use std::iter::Peekable;
 use std::num::ParseIntError;
 use crate::lexer::{NumberLiteralKind, Token, TokenKind};
 
@@ -90,82 +91,173 @@ pub struct ParseError<'a> {
 
 // TODO: clean up in general
 pub struct Parser<'a, TIter> where TIter: Iterator<Item=&'a Token<'a>> {
-    input_tokens: TIter,
+    input_tokens: Peekable<TIter>,
 }
 
 impl<'a, TIter> Parser<'a, TIter> where TIter: Iterator<Item=&'a Token<'a>> {
     pub fn new(tokens: TIter) -> Self {
         Parser {
-            input_tokens: tokens
+            input_tokens: tokens.peekable()
         }
     }
 
     pub fn parse(&mut self) -> Result<Vec<Node>, ParseError> {
         let mut program: Vec<Node> = vec![];
 
-        program.push(self.parse_label()?);
+        while let Some(_) = self.input_tokens.peek() {
+            while self.skip_optional_newline() { }
+
+            if let Ok(n) = self.parse_label() {
+                program.push(n);
+                continue;
+            }
+
+            match self.parse_instruction() {
+                Ok(n) => {
+                    program.push(n);
+                    continue
+                }
+                Err(err) => {
+                    return Err(err)
+                }
+            }
+        }
 
         Ok(program)
     }
 
-    fn parse_label(&mut self) -> Result<Node, ParseError> {
+    fn parse_label(&mut self) -> Result<Node<'a>, ParseError<'a>> {
         let first = self.input_tokens.next();
-        if let Some(Token { kind: TokenKind::Identifier, text, .. }) = first {
-            let second = self.input_tokens.next();
-            if let Some(Token { kind: TokenKind::Colon, .. }) = second {
-                Ok(Node::Label { name: text })
-            } else {
-                Err(unexpected_token(second, vec![TokenKind::Colon]))
-            }
-        } else {
-            Err(unexpected_token(first, vec![TokenKind::Identifier]))
-        }
+        let Some(Token { kind: TokenKind::Identifier, text, .. }) = first else {
+            return Err(unexpected_token(first, vec![TokenKind::Identifier]));
+        };
+
+        let second = self.input_tokens.next();
+        let Some(Token { kind: TokenKind::Colon, .. }) = second else {
+            return Err(unexpected_token(second, vec![TokenKind::Colon]));
+        };
+
+        Ok(Node::Label { name: text })
     }
 
-    // fn parse_instruction(&mut self) -> Result<Node, ParseError> {
-    //     let instruction_kind =
-    //         match self.input_tokens.next() {
-    //             Some(token @ Token { kind: TokenKind::Identifier, text, .. }) =>
-    //                 InstructionKind::from_str(text).ok_or(ParseError {
-    //                     token: Some(token),
-    //                     kind: UnknownInstruction,
-    //                     help: None,
-    //                 }),
-    //             other => Err(unexpected_token(other, vec![TokenKind::Identifier]))
-    //         }?;
-    // }
+    fn parse_instruction(&mut self) -> Result<Node<'a>, ParseError<'a>> {
+        let instruction_kind =
+            match self.input_tokens.next() {
+                Some(token @ Token { kind: TokenKind::Identifier, text, .. }) =>
+                    InstructionKind::from_str(text).ok_or(ParseError {
+                        token: Some(token),
+                        kind: ParseErrorKind::UnknownInstruction,
+                        help: None,
+                    }),
+                other => Err(unexpected_token(other, vec![TokenKind::Identifier]))
+            }?;
 
-    fn parse_number_literal(&mut self) -> Result<Node, ParseError> {
-        let next = self.input_tokens.next();
+        let mut args = vec![];
 
-        if let Some(token @ Token { kind: TokenKind::NumberLiteral { kind }, text, .. }) = next {
-            let value = match kind {
-                NumberLiteralKind::Decimal => u8::from_str_radix(text, 10),
-                NumberLiteralKind::Hex => u8::from_str_radix(&text[2..], 16),
-                NumberLiteralKind::Binary => u8::from_str_radix(&text[2..], 2)
+        while let Some(token) = self.input_tokens.next() {
+            if token.kind == TokenKind::Newline {
+                break;
+            }
+
+            let num_result = parse_number_literal(token);
+            match num_result {
+                Ok(n) => {
+                    args.push(n);
+                    continue;
+                }
+                Err(err @ ParseError { kind: ParseErrorKind::InvalidNumberLiteral { .. }, .. }) => { return Err(err); }
+                Err(_) => {}
             };
 
-            match value {
-                Ok(value) => Ok(Node::NumberLiteral { value }),
-                Err(err) => Err(ParseError {
-                    token: Some(token),
-                    kind: ParseErrorKind::InvalidNumberLiteral { cause: err },
-                    help: None,
-                })
+            let reg_result = parse_register_literal(token);
+            if let Ok(n) = reg_result {
+                args.push(n);
+                continue;
             }
-        } else {
-            let expected = vec![
-                TokenKind::NumberLiteral { kind: NumberLiteralKind::Binary },
-                TokenKind::NumberLiteral { kind: NumberLiteralKind::Decimal },
-                TokenKind::NumberLiteral { kind: NumberLiteralKind::Hex },
-            ];
-            Err(unexpected_token(next, expected))
+
+            let label_result = parse_label_reference(token);
+            match label_result {
+                Ok(n) => {
+                    args.push(n);
+                    continue;
+                }
+                Err(_) => {
+                    return Err(unexpected_token(Some(token), vec![
+                        TokenKind::NumberLiteral { kind: NumberLiteralKind::Binary },
+                        TokenKind::NumberLiteral { kind: NumberLiteralKind::Decimal },
+                        TokenKind::NumberLiteral { kind: NumberLiteralKind::Hex },
+                        TokenKind::Identifier
+                    ]))
+                }
+            }
         }
+
+        Ok(Node::Instruction { kind: instruction_kind, arguments: args })
     }
 
-    // fn parse_register_literal(&mut self) -> Result<Node, ParseError> {
-    //     let token =
-    // }
+    fn skip_optional_newline(&mut self) -> bool {
+        if let Some(Token { kind: TokenKind::Newline, .. }) = self.input_tokens.peek() {
+            self.input_tokens.next();
+            return true
+        }
+        false
+    }
+}
+
+fn parse_number_literal<'a>(next: &'a Token) -> Result<Node<'a>, ParseError<'a>> {
+    let token @ Token { kind: TokenKind::NumberLiteral { kind }, text, .. } = next else {
+        let expected = vec![
+            TokenKind::NumberLiteral { kind: NumberLiteralKind::Binary },
+            TokenKind::NumberLiteral { kind: NumberLiteralKind::Decimal },
+            TokenKind::NumberLiteral { kind: NumberLiteralKind::Hex },
+        ];
+        return Err(unexpected_token(Some(next), expected));
+    };
+
+    let value = match kind {
+        NumberLiteralKind::Decimal => u8::from_str_radix(text, 10),
+        NumberLiteralKind::Hex => u8::from_str_radix(&text[2..], 16),
+        NumberLiteralKind::Binary => u8::from_str_radix(&text[2..], 2)
+    };
+
+    match value {
+        Ok(value) => Ok(Node::NumberLiteral { value }),
+        Err(err) => Err(ParseError {
+            token: Some(token),
+            kind: ParseErrorKind::InvalidNumberLiteral { cause: err },
+            help: None,
+        })
+    }
+}
+
+fn parse_register_literal<'a>(next: &'a Token) -> Result<Node<'a>, ParseError<'a>> {
+    let Token { kind: TokenKind::Identifier, text, .. } = next else {
+        return Err(unexpected_token(Some(next), vec![TokenKind::Identifier]));
+    };
+
+    let reg = match *text {
+        "a" => Ok(Register::A),
+        "x" => Ok(Register::X),
+        "y" => Ok(Register::Y),
+        "z" => Ok(Register::Z),
+        _ => Err(ParseError {
+            token: Some(next),
+            kind: ParseErrorKind::UnknownRegister,
+            help: None,
+        })
+    }?;
+
+    Ok(Node::RegisterLiteral { register: reg })
+}
+
+fn parse_label_reference<'a>(next: &'a Token) -> Result<Node<'a>, ParseError<'a>> {
+    let Token { kind: TokenKind::Identifier, text, .. } = next else {
+        return Err(unexpected_token(Some(next), vec![TokenKind::Identifier]));
+    };
+
+    Ok(Node::LabelReference {
+        name: text,
+    })
 }
 
 // TODO: help

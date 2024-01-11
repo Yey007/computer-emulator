@@ -1,3 +1,4 @@
+#![feature(if_let_guard)]
 mod lexer;
 mod location;
 mod parser;

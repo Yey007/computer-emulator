@@ -14,14 +14,19 @@ impl Location {
         }
     }
 
-    pub fn advance_col(&mut self) {
-        self.index += 1;
-        self.col += 1;
+    pub fn advance_col(self) -> Location {
+        Location {
+            index: self.index + 1,
+            line: self.line,
+            col: self.col + 1
+        }
     }
 
-    pub fn advance_line(&mut self) {
-        self.index += 1;
-        self.line += 1;
-        self.col = 1;
+    pub fn advance_line(self) -> Location {
+        Location {
+            index: self.index + 1,
+            line: self.line + 1,
+            col: 1
+        }
     }
 }

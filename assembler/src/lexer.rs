@@ -1,17 +1,17 @@
-use std::str::from_utf8;
 use crate::location::Location;
 
+#[derive(Eq, PartialEq)]
 pub enum NumberLiteralKind {
     Decimal,
     Hex,
     Binary,
 }
 
+#[derive(Eq, PartialEq)]
 pub enum TokenKind {
     Newline,
     Colon,
-    Comma,
-    // Includes instructions, labels, and non-literal instruction parameters
+    // Includes instructions, labels, and non-number instruction parameters
     Identifier,
     NumberLiteral { kind: NumberLiteralKind },
 }
@@ -25,10 +25,6 @@ pub struct Token<'a> {
 pub struct Lexer<'a> {
     /// The program. Contains only ASCII characters.
     program: &'a str,
-    /// The start location of the current sequence being processed. Must be <= location.
-    sequence_start_location: Location,
-    /// A flag indicating that the next advancement should start a new sequence.
-    start_new_sequence: bool,
     /// The current location of the lexer in the program.
     location: Location,
     /// The tokens gathered so far.
@@ -46,8 +42,6 @@ impl<'a> Lexer<'a> {
 
         Lexer {
             program,
-            sequence_start_location: Location::start(),
-            start_new_sequence: false,
             location: Location::start(),
             tokens: vec![],
         }
@@ -56,111 +50,89 @@ impl<'a> Lexer<'a> {
     pub fn lex(mut self) -> Vec<Token<'a>> {
         while let Some(char) = self.current_char() {
             match char {
-                '\n' => self.push_sequence_and_current(TokenKind::Newline),
-                c if c.is_whitespace() => self.push_sequence(),
-                ':' => self.push_sequence_and_current(TokenKind::Colon),
-                ',' => self.push_sequence_and_current(TokenKind::Comma),
+                c if let Some(kind) = single_char_token(c) => self.handle_single(kind),
+                c if c.is_ascii_digit() => self.handle_number(),
+                c if c.is_ascii_whitespace() => self.advance(),
                 ';' => self.handle_comment(),
-                _ => {}
+                _ => self.handle_ident()
             };
-
-            self.advance();
         }
-
-        self.push_sequence();
 
         self.tokens
     }
 
-    fn push_sequence_and_current(&mut self, kind: TokenKind) {
-        self.push_sequence();
-        self.push_current(kind);
-    }
-
-    fn push_current(&mut self, kind: TokenKind) {
-        let Some(current) = self.current_char_as_str() else { return; };
+    fn handle_single(&mut self, kind: TokenKind) {
+        let current = self.current_char_as_str().expect("Current char must be available to handle it");
 
         self.tokens.push(
             Token { kind, location: self.location, text: current }
-        )
+        );
+
+        self.advance()
+    }
+
+    fn handle_number(&mut self) {
+        let start = self.location;
+        let num = self.get_sequence();
+
+        let kind = match num.get(0..2) {
+            Some("0x") => NumberLiteralKind::Hex,
+            Some("0b") => NumberLiteralKind::Binary,
+            _ => NumberLiteralKind::Decimal
+        };
+
+        self.tokens.push(Token {
+            kind: TokenKind::NumberLiteral { kind },
+            location: start,
+            text: num,
+        })
+    }
+
+    fn handle_ident(&mut self) {
+        let start = self.location;
+        let str = self.get_sequence();
+
+        self.tokens.push(Token {
+            kind: TokenKind::Identifier,
+            location: start,
+            text: str,
+        })
     }
 
     fn handle_comment(&mut self) {
+        assert!(self.current_char().is_some(), "Current char must be available to handle a comment");
+
         while let Some(current) = self.current_char() {
             if current == '\n' {
                 break;
             }
             self.advance()
         }
-        self.start_new_sequence = true;
     }
 
-    // TODO: Should we use the sequence for all of these cases?
-    fn push_sequence(&mut self) {
-        let Some(sequence) = self.current_sequence() else { return; };
+    fn get_sequence(&mut self) -> &'a str {
+        assert!(self.current_char().is_some(), "Current char must be available to lex a sequence");
 
-        if sequence.is_empty() {
-            self.start_new_sequence = true;
-            return;
+        let start = self.location;
+        while let Some(current) = self.current_char() {
+            if is_sequence_terminator(current) {
+                break;
+            }
+            self.advance()
         }
 
-        if sequence.starts_with(|c: char| c.is_ascii_digit()) {
-            let kind = match sequence.get(0..2) {
-                Some("0x") => NumberLiteralKind::Hex,
-                Some("0b") => NumberLiteralKind::Binary,
-                _ => NumberLiteralKind::Decimal
-            };
-
-            let token = Token {
-                kind: TokenKind::NumberLiteral { kind },
-                location: self.sequence_start_location,
-                text: sequence,
-            };
-
-            self.tokens.push(token);
-        } else {
-            let token = Token {
-                kind: TokenKind::Identifier,
-                location: self.sequence_start_location,
-                text: sequence,
-            };
-
-            self.tokens.push(token);
-        }
-
-        self.start_new_sequence = true;
+        &self.program[start.index..self.location.index]
     }
 
     /// Advances the current location of the lexer, if possible, adjusting `self.location` accordingly.
-    /// `self.sequence_start_location` will be left untouched.
     fn advance(&mut self) {
         let current = self.current_char();
 
-        // TODO: CRLF
         if let Some('\n') = current {
-            self.location.advance_line()
+            self.location = self.location.advance_line()
         } else if let Some(_) = current {
-            self.location.advance_col()
+            self.location = self.location.advance_col()
         }
-
-        if self.start_new_sequence {
-            self.sequence_start_location = self.location;
-            self.start_new_sequence = false
-        }
-    }
-
-    /// Returns the current sequence being processed. Will return `None` if the lexer has finished. The returned string
-    /// slice may be empty, in which case there is nothing in the sequence, likely due to terminator like a colon or
-    /// comma being processed in the previous iteration.
-    fn current_sequence(&self) -> Option<&'a str> {
-        let start = self.sequence_start_location.index;
-        let end = self.location.index;
-
-        if end > self.program.len() {
-            return None;
-        }
-
-        Some(&self.program[start..end])
     }
 
     /// Returns the current character if the lexer has not finished. Returns None if it has.
@@ -173,10 +145,18 @@ impl<'a> Lexer<'a> {
     /// constructing tokens easier.
     fn current_char_as_str(&self) -> Option<&'a str> {
         let index = self.location.index;
-        if index >= self.program.len() {
-            return None;
-        }
+        self.program.get(index..=index)
+    }
+}
 
-        Some(&self.program[index..=index])
+fn is_sequence_terminator(c: char) -> bool {
+    single_char_token(c).is_some() || c.is_ascii_whitespace() || c == ';'
+}
+
+fn single_char_token(c: char) -> Option<TokenKind> {
+    match c {
+        '\n' => Some(TokenKind::Newline),
+        ':' => Some(TokenKind::Colon),
+        _ => None
     }
 }
