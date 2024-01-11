@@ -29,10 +29,9 @@ fn main() {
         Err(err) => panic!("Could not read input file {}. Cause: {}", input_filename, err),
     };
 
-    let lexer = Lexer::new(input.as_str());
-    let tokens = lexer.lex();
+    let mut lexer = Lexer::new(input.as_str());
 
-    let mut parser = Parser::new(tokens.iter());
+    let mut parser = Parser::new(lexer.iter());
     let result = parser.parse();
     
     println!("hi")

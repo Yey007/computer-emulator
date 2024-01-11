@@ -1,72 +1,6 @@
 use std::iter::Peekable;
 use std::num::ParseIntError;
-use crate::lexer::{NumberLiteralKind, Token, TokenKind};
-
-pub enum InstructionKind {
-    NOP,
-    STR,
-    LOD,
-    LDI,
-    INC,
-    DEC,
-    MOV,
-    INP,
-    OUT,
-    SEP,
-    RSP,
-    ADD,
-    SUB,
-    BOR,
-    AND,
-    CMP,
-    GRT,
-    LES,
-    BRN,
-    SSJ,
-    RSJ,
-    RET,
-    SSF,
-    RSF,
-}
-
-impl InstructionKind {
-    pub fn from_str(s: &str) -> Option<Self> {
-        match s {
-            "nop" => Some(InstructionKind::NOP),
-            "str" => Some(InstructionKind::STR),
-            "lod" => Some(InstructionKind::LOD),
-            "ldi" => Some(InstructionKind::LDI),
-            "inc" => Some(InstructionKind::INC),
-            "dec" => Some(InstructionKind::DEC),
-            "mov" => Some(InstructionKind::MOV),
-            "inp" => Some(InstructionKind::INP),
-            "out" => Some(InstructionKind::OUT),
-            "sep" => Some(InstructionKind::SEP),
-            "rsp" => Some(InstructionKind::RSP),
-            "add" => Some(InstructionKind::ADD),
-            "sub" => Some(InstructionKind::SUB),
-            "bor" => Some(InstructionKind::BOR),
-            "and" => Some(InstructionKind::AND),
-            "cmp" => Some(InstructionKind::CMP),
-            "grt" => Some(InstructionKind::GRT),
-            "les" => Some(InstructionKind::LES),
-            "brn" => Some(InstructionKind::BRN),
-            "ssj" => Some(InstructionKind::SSJ),
-            "rsj" => Some(InstructionKind::RSJ),
-            "ret" => Some(InstructionKind::RET),
-            "ssf" => Some(InstructionKind::SSF),
-            "rsf" => Some(InstructionKind::RSF),
-            _ => None,
-        }
-    }
-}
-
-pub enum Register {
-    A,
-    X,
-    Y,
-    Z,
-}
+use crate::lexer::{InstructionKind, NumberLiteralKind, Register, Token, TokenKind};
 
 pub enum Node<'a> {
     Label { name: &'a str },
@@ -76,196 +10,135 @@ pub enum Node<'a> {
     NumberLiteral { value: u8 },
 }
 
+#[derive(Eq, PartialEq)]
+pub enum ErrorTokenKind {
+    Newline,
+    Colon,
+    LabelIdentifier,
+    Instruction,
+    NumberLiteral,
+    RegisterLiteral,
+}
+
 pub enum ParseErrorKind {
     InvalidNumberLiteral { cause: ParseIntError },
-    UnknownInstruction,
-    UnknownRegister,
-    UnexpectedToken { expected_types: Vec<TokenKind> },
+    UnexpectedToken { expected_types: Vec<ErrorTokenKind> },
 }
 
 pub struct ParseError<'a> {
-    token: Option<&'a Token<'a>>,
+    token: Option<Token<'a>>,
     kind: ParseErrorKind,
     help: Option<String>,
 }
 
 // TODO: clean up in general
-pub struct Parser<'a, TIter> where TIter: Iterator<Item=&'a Token<'a>> {
+pub struct Parser<'a, TIter> where TIter: Iterator<Item=Token<'a>> {
     input_tokens: Peekable<TIter>,
 }
 
-impl<'a, TIter> Parser<'a, TIter> where TIter: Iterator<Item=&'a Token<'a>> {
+impl<'a, TIter> Parser<'a, TIter> where TIter: Iterator<Item=Token<'a>> {
     pub fn new(tokens: TIter) -> Self {
         Parser {
             input_tokens: tokens.peekable()
         }
     }
 
-    pub fn parse(&mut self) -> Result<Vec<Node>, ParseError> {
+    pub fn parse(&mut self) -> Result<Vec<Node>, Vec<ParseError>> {
         let mut program: Vec<Node> = vec![];
+        let mut errors: Vec<ParseError> = vec![];
 
-        while let Some(_) = self.input_tokens.peek() {
-            while self.skip_optional_newline() { }
-
-            if let Ok(n) = self.parse_label() {
-                program.push(n);
-                continue;
-            }
-
-            match self.parse_instruction() {
-                Ok(n) => {
-                    program.push(n);
-                    continue
+        while let Some(token) = self.input_tokens.next() {
+            match token {
+                Token { kind: TokenKind::Newline, .. } => {}
+                Token { kind: TokenKind::LabelIdentifier, text, .. } => {
+                    match self.parse_label(text) {
+                        Ok(n) => program.push(n),
+                        Err(err) => errors.push(err)
+                    }
                 }
-                Err(err) => {
-                    return Err(err)
+                Token { kind: TokenKind::Instruction { kind }, .. } => {
+                    match self.parse_instruction(kind) {
+                        Ok(n) => program.push(n),
+                        Err(err) => errors.push(err)
+                    }
                 }
+                other => errors.push(ParseError {
+                    token: Some(other),
+                    kind: ParseErrorKind::UnexpectedToken {
+                        expected_types: vec![
+                            ErrorTokenKind::Newline, ErrorTokenKind::LabelIdentifier, ErrorTokenKind::Instruction,
+                        ]
+                    },
+                    help: None,
+                })
             }
         }
 
-        Ok(program)
+        if errors.is_empty() {
+            Ok(program)
+        } else {
+            Err(errors)
+        }
     }
 
-    fn parse_label(&mut self) -> Result<Node<'a>, ParseError<'a>> {
-        let first = self.input_tokens.next();
-        let Some(Token { kind: TokenKind::Identifier, text, .. }) = first else {
-            return Err(unexpected_token(first, vec![TokenKind::Identifier]));
-        };
-
-        let second = self.input_tokens.next();
-        let Some(Token { kind: TokenKind::Colon, .. }) = second else {
-            return Err(unexpected_token(second, vec![TokenKind::Colon]));
-        };
-
-        Ok(Node::Label { name: text })
+    pub fn parse_label(&mut self, text: &'a str) -> Result<Node<'a>, ParseError<'a>> {
+        match self.input_tokens.next() {
+            Some(Token { kind: TokenKind::Colon, .. }) => Ok(Node::Label { name: text }),
+            other => Err(ParseError {
+                token: other,
+                kind: ParseErrorKind::UnexpectedToken { expected_types: vec![ErrorTokenKind::Colon] },
+                help: None,
+            })
+        }
     }
 
-    fn parse_instruction(&mut self) -> Result<Node<'a>, ParseError<'a>> {
-        let instruction_kind =
-            match self.input_tokens.next() {
-                Some(token @ Token { kind: TokenKind::Identifier, text, .. }) =>
-                    InstructionKind::from_str(text).ok_or(ParseError {
-                        token: Some(token),
-                        kind: ParseErrorKind::UnknownInstruction,
-                        help: None,
-                    }),
-                other => Err(unexpected_token(other, vec![TokenKind::Identifier]))
-            }?;
-
+    pub fn parse_instruction(&mut self, kind: InstructionKind) -> Result<Node<'a>, ParseError<'a>> {
         let mut args = vec![];
 
         while let Some(token) = self.input_tokens.next() {
-            if token.kind == TokenKind::Newline {
-                break;
-            }
-
-            let num_result = parse_number_literal(token);
-            match num_result {
-                Ok(n) => {
-                    args.push(n);
-                    continue;
+            match token {
+                Token { kind: TokenKind::Newline, .. } => break,
+                Token { kind: TokenKind::LabelIdentifier, text, .. } =>
+                    args.push(Node::LabelReference { name: text }),
+                Token { kind: TokenKind::RegisterLiteral { register }, .. } =>
+                    args.push(Node::RegisterLiteral { register }),
+                Token { kind: TokenKind::NumberLiteral { kind: num_kind }, text, .. } => {
+                    match parse_number_literal(num_kind, text) {
+                        Ok(value) => args.push(Node::NumberLiteral { value }),
+                        Err(err) => return Err(ParseError {
+                            token: Some(token),
+                            kind: ParseErrorKind::InvalidNumberLiteral { cause: err },
+                            help: None,
+                        })
+                    }
                 }
-                Err(err @ ParseError { kind: ParseErrorKind::InvalidNumberLiteral { .. }, .. }) => { return Err(err); }
-                Err(_) => {}
-            };
-
-            let reg_result = parse_register_literal(token);
-            if let Ok(n) = reg_result {
-                args.push(n);
-                continue;
-            }
-
-            let label_result = parse_label_reference(token);
-            match label_result {
-                Ok(n) => {
-                    args.push(n);
-                    continue;
-                }
-                Err(_) => {
-                    return Err(unexpected_token(Some(token), vec![
-                        TokenKind::NumberLiteral { kind: NumberLiteralKind::Binary },
-                        TokenKind::NumberLiteral { kind: NumberLiteralKind::Decimal },
-                        TokenKind::NumberLiteral { kind: NumberLiteralKind::Hex },
-                        TokenKind::Identifier
-                    ]))
-                }
+                other => return Err(ParseError {
+                    token: Some(other),
+                    kind: ParseErrorKind::UnexpectedToken {
+                        expected_types: vec![
+                            ErrorTokenKind::Newline,
+                            ErrorTokenKind::LabelIdentifier,
+                            ErrorTokenKind::RegisterLiteral,
+                            ErrorTokenKind::NumberLiteral,
+                        ]
+                    },
+                    help: None,
+                })
             }
         }
 
-        Ok(Node::Instruction { kind: instruction_kind, arguments: args })
-    }
-
-    fn skip_optional_newline(&mut self) -> bool {
-        if let Some(Token { kind: TokenKind::Newline, .. }) = self.input_tokens.peek() {
-            self.input_tokens.next();
-            return true
-        }
-        false
+        Ok(Node::Instruction {
+            kind,
+            arguments: args,
+        })
     }
 }
 
-fn parse_number_literal<'a>(next: &'a Token) -> Result<Node<'a>, ParseError<'a>> {
-    let token @ Token { kind: TokenKind::NumberLiteral { kind }, text, .. } = next else {
-        let expected = vec![
-            TokenKind::NumberLiteral { kind: NumberLiteralKind::Binary },
-            TokenKind::NumberLiteral { kind: NumberLiteralKind::Decimal },
-            TokenKind::NumberLiteral { kind: NumberLiteralKind::Hex },
-        ];
-        return Err(unexpected_token(Some(next), expected));
-    };
-
-    let value = match kind {
+fn parse_number_literal(kind: NumberLiteralKind, text: &str) -> Result<u8, ParseIntError> {
+    match kind {
         NumberLiteralKind::Decimal => u8::from_str_radix(text, 10),
         NumberLiteralKind::Hex => u8::from_str_radix(&text[2..], 16),
         NumberLiteralKind::Binary => u8::from_str_radix(&text[2..], 2)
-    };
-
-    match value {
-        Ok(value) => Ok(Node::NumberLiteral { value }),
-        Err(err) => Err(ParseError {
-            token: Some(token),
-            kind: ParseErrorKind::InvalidNumberLiteral { cause: err },
-            help: None,
-        })
-    }
-}
-
-fn parse_register_literal<'a>(next: &'a Token) -> Result<Node<'a>, ParseError<'a>> {
-    let Token { kind: TokenKind::Identifier, text, .. } = next else {
-        return Err(unexpected_token(Some(next), vec![TokenKind::Identifier]));
-    };
-
-    let reg = match *text {
-        "a" => Ok(Register::A),
-        "x" => Ok(Register::X),
-        "y" => Ok(Register::Y),
-        "z" => Ok(Register::Z),
-        _ => Err(ParseError {
-            token: Some(next),
-            kind: ParseErrorKind::UnknownRegister,
-            help: None,
-        })
-    }?;
-
-    Ok(Node::RegisterLiteral { register: reg })
-}
-
-fn parse_label_reference<'a>(next: &'a Token) -> Result<Node<'a>, ParseError<'a>> {
-    let Token { kind: TokenKind::Identifier, text, .. } = next else {
-        return Err(unexpected_token(Some(next), vec![TokenKind::Identifier]));
-    };
-
-    Ok(Node::LabelReference {
-        name: text,
-    })
-}
-
-// TODO: help
-fn unexpected_token<'a>(maybe_token: Option<&'a Token<'a>>, expected_types: Vec<TokenKind>) -> ParseError {
-    ParseError {
-        token: maybe_token,
-        kind: ParseErrorKind::UnexpectedToken { expected_types },
-        help: None,
     }
 }
 

@@ -1,21 +1,103 @@
 use crate::location::Location;
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Copy, Clone)]
+pub enum InstructionKind {
+    NOP,
+    STR,
+    LOD,
+    LDI,
+    INC,
+    DEC,
+    MOV,
+    INP,
+    OUT,
+    SEP,
+    RSP,
+    ADD,
+    SUB,
+    BOR,
+    AND,
+    CMP,
+    GRT,
+    LES,
+    BRN,
+    SSJ,
+    RSJ,
+    RET,
+    SSF,
+    RSF,
+}
+
+impl InstructionKind {
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "nop" => Some(InstructionKind::NOP),
+            "str" => Some(InstructionKind::STR),
+            "lod" => Some(InstructionKind::LOD),
+            "ldi" => Some(InstructionKind::LDI),
+            "inc" => Some(InstructionKind::INC),
+            "dec" => Some(InstructionKind::DEC),
+            "mov" => Some(InstructionKind::MOV),
+            "inp" => Some(InstructionKind::INP),
+            "out" => Some(InstructionKind::OUT),
+            "sep" => Some(InstructionKind::SEP),
+            "rsp" => Some(InstructionKind::RSP),
+            "add" => Some(InstructionKind::ADD),
+            "sub" => Some(InstructionKind::SUB),
+            "bor" => Some(InstructionKind::BOR),
+            "and" => Some(InstructionKind::AND),
+            "cmp" => Some(InstructionKind::CMP),
+            "grt" => Some(InstructionKind::GRT),
+            "les" => Some(InstructionKind::LES),
+            "brn" => Some(InstructionKind::BRN),
+            "ssj" => Some(InstructionKind::SSJ),
+            "rsj" => Some(InstructionKind::RSJ),
+            "ret" => Some(InstructionKind::RET),
+            "ssf" => Some(InstructionKind::SSF),
+            "rsf" => Some(InstructionKind::RSF),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Eq, PartialEq, Copy, Clone)]
+pub enum Register {
+    A,
+    X,
+    Y,
+    Z,
+}
+
+impl Register {
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "a" => Some(Register::A),
+            "x" => Some(Register::X),
+            "y" => Some(Register::Y),
+            "z" => Some(Register::Z),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Eq, PartialEq, Copy, Clone)]
 pub enum NumberLiteralKind {
     Decimal,
     Hex,
     Binary,
 }
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Copy, Clone)]
 pub enum TokenKind {
     Newline,
     Colon,
-    // Includes instructions, labels, and non-number instruction parameters
-    Identifier,
+    LabelIdentifier,
+    Instruction { kind: InstructionKind },
     NumberLiteral { kind: NumberLiteralKind },
+    RegisterLiteral { register: Register }
 }
 
+#[derive(Clone)]
 pub struct Token<'a> {
     pub kind: TokenKind,
     pub location: Location,
@@ -27,8 +109,6 @@ pub struct Lexer<'a> {
     program: &'a str,
     /// The current location of the lexer in the program.
     location: Location,
-    /// The tokens gathered so far.
-    tokens: Vec<Token<'a>>,
 }
 
 impl<'a> Lexer<'a> {
@@ -43,37 +123,38 @@ impl<'a> Lexer<'a> {
         Lexer {
             program,
             location: Location::start(),
-            tokens: vec![],
         }
     }
 
-    pub fn lex(mut self) -> Vec<Token<'a>> {
+    pub fn iter(&'a mut self) -> Iter {
+        Iter {
+            lexer: self
+        }
+    }
+
+    pub fn next_token(&mut self) -> Option<Token<'a>> {
         while let Some(char) = self.current_char() {
             match char {
-                c if let Some(kind) = single_char_token(c) => self.handle_single(kind),
-                c if c.is_ascii_digit() => self.handle_number(),
+                c if let Some(kind) = single_char_token(c) => return self.handle_single(kind),
+                c if c.is_ascii_digit() => return self.handle_number(),
                 c if c.is_ascii_whitespace() => self.advance(),
                 ';' => self.handle_comment(),
-                _ => self.handle_ident()
+                _ => return self.handle_ident()
             };
-        }
+        };
 
-        self.tokens
+        None
     }
 
-    fn handle_single(&mut self, kind: TokenKind) {
-        let current = self.current_char_as_str().expect("Current char must be available to handle it");
-
-        self.tokens.push(
-            Token { kind, location: self.location, text: current }
-        );
-
-        self.advance()
+    fn handle_single(&mut self, kind: TokenKind) -> Option<Token<'a>> {
+        let current = self.current_char_as_str()?;
+        self.advance();
+        Some(Token { kind, location: self.location, text: current })
     }
 
-    fn handle_number(&mut self) {
+    fn handle_number(&mut self) -> Option<Token<'a>> {
         let start = self.location;
-        let num = self.get_sequence();
+        let num = self.get_sequence()?;
 
         let kind = match num.get(0..2) {
             Some("0x") => NumberLiteralKind::Hex,
@@ -81,19 +162,25 @@ impl<'a> Lexer<'a> {
             _ => NumberLiteralKind::Decimal
         };
 
-        self.tokens.push(Token {
+        Some(Token {
             kind: TokenKind::NumberLiteral { kind },
             location: start,
             text: num,
         })
     }
 
-    fn handle_ident(&mut self) {
+    fn handle_ident(&mut self) -> Option<Token<'a>> {
         let start = self.location;
-        let str = self.get_sequence();
+        let str = self.get_sequence()?;
 
-        self.tokens.push(Token {
-            kind: TokenKind::Identifier,
+        let kind = match str {
+            s if let Some(inst) = InstructionKind::from_str(s) => TokenKind::Instruction { kind: inst },
+            s if let Some(reg) = Register::from_str(s) => TokenKind::RegisterLiteral { register: reg },
+            _ => TokenKind::LabelIdentifier
+        };
+
+        Some(Token {
+            kind,
             location: start,
             text: str,
         })
@@ -110,9 +197,10 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn get_sequence(&mut self) -> &'a str {
-        assert!(self.current_char().is_some(), "Current char must be available to lex a sequence");
-
+    /// Gets a sequence of characters stretching from the current lexer location to just before a sequence terminator
+    /// or the end of the file is reached. None is returned if the current location is out of bounds. The returned
+    /// sequence will never be empty.
+    fn get_sequence(&mut self) -> Option<&'a str> {
         let start = self.location;
         while let Some(current) = self.current_char() {
             if is_sequence_terminator(current) {
@@ -121,7 +209,10 @@ impl<'a> Lexer<'a> {
             self.advance()
         }
 
-        &self.program[start.index..self.location.index]
+        let result = self.program.get(start.index..self.location.index);
+        assert!(!result.is_some_and(|val| val.is_empty()));
+
+        result
     }
 
     /// Advances the current location of the lexer, if possible, adjusting `self.location` accordingly.
@@ -158,5 +249,17 @@ fn single_char_token(c: char) -> Option<TokenKind> {
         '\n' => Some(TokenKind::Newline),
         ':' => Some(TokenKind::Colon),
         _ => None
+    }
+}
+
+pub struct Iter<'a> {
+    lexer: &'a mut Lexer<'a>
+}
+
+impl<'a> Iterator for Iter<'a> {
+    type Item = Token<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.lexer.next_token()
     }
 }

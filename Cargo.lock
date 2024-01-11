@@ -5,6 +5,9 @@ version = 3
 [[package]]
 name = "assembler"
 version = "0.1.0"
+dependencies = [
+ "log",
+]
 
 [[package]]
 name = "bitmatch"
@@ -56,6 +59,12 @@ checksum = "284f18f85651fe11e8a991b2adb42cb078325c996ed026d994719efcfca1d54b"
 dependencies = [
  "either",
 ]
+
+[[package]]
+name = "log"
+version = "0.4.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b5e6163cb8c49088c2c36f57875e58ccd8c87c7427f7fbd50ea6710b2f3f2e8f"
 
 [[package]]
 name = "proc-macro2"

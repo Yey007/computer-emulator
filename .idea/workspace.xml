@@ -9,11 +9,11 @@
   <component name="ChangeListManager">
     <list default="true" id="d6596c9d-65af-4718-9856-113efb9213ac" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assembler/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/assembler/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assembler/src/lexer.rs" beforeDir="false" afterPath="$PROJECT_DIR$/assembler/src/lexer.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assembler/src/location.rs" beforeDir="false" afterPath="$PROJECT_DIR$/assembler/src/location.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assembler/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/assembler/src/main.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assembler/src/parser.rs" beforeDir="false" afterPath="$PROJECT_DIR$/assembler/src/parser.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/programs/hello_world.asm" beforeDir="false" afterPath="$PROJECT_DIR$/programs/hello_world.asm" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -264,7 +264,7 @@
       <workItem from="1704833076757" duration="4091000" />
       <workItem from="1704878575528" duration="5404000" />
       <workItem from="1704913956819" duration="2669000" />
-      <workItem from="1704968454794" duration="2292000" />
+      <workItem from="1704968454794" duration="14958000" />
     </task>
     <servers />
   </component>
