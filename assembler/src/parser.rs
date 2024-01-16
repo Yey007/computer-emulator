@@ -26,12 +26,12 @@ pub enum ParseErrorKind {
 }
 
 pub struct ParseError<'a> {
-    token: Option<Token<'a>>,
-    kind: ParseErrorKind,
-    help: Option<String>,
+    pub token: Option<Token<'a>>,
+    pub kind: ParseErrorKind,
+    pub help: Option<String>,
 }
 
-// TODO: clean up in general
+// TODO: better errors
 pub struct Parser<'a, TIter> where TIter: Iterator<Item=Token<'a>> {
     input_tokens: Peekable<TIter>,
 }
