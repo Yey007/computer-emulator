@@ -11,9 +11,10 @@ use crate::computer::register::Register;
 use std::borrow::{BorrowMut};
 use crate::device::connectable::device_pin::DevicePin;
 use crate::device::Device;
-use common::instruction::{decode_instruction, Instruction};
+use common::instruction::{Instruction};
 use common::architecture::*;
 use common::un::U;
+use crate::computer::instruction::decode_instruction;
 
 pub struct Computer {
     alu: ArithmeticLogicUnit,
@@ -84,7 +85,7 @@ impl Computer {
     fn fetch(&self) -> U<INSTRUCTION_BITS> {
         let pc = self.program_counter.load();
         let pa = self.page_address.load();
-        let addr = (pa.change_bits() << (PC_BITS as u128).into()) | pc.change_bits();
+        let addr = (pa.change_bits() << PC_BITS) | pc.change_bits();
         self.program_memory.read(addr)
     }
 
@@ -215,7 +216,7 @@ impl Computer {
         let x = self.x_register.load().change_bits();
         let y = self.y_register.load().change_bits();
 
-        let x_shifted = x << (WORKING_BITS as u128).into();
+        let x_shifted = x << WORKING_BITS;
         x_shifted | y
     }
 }
