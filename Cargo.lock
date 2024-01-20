@@ -34,9 +34,6 @@ dependencies = [
 [[package]]
 name = "common"
 version = "0.1.0"
-dependencies = [
- "bitmatch",
-]
 
 [[package]]
 name = "either"
@@ -48,6 +45,7 @@ checksum = "a26ae43d7bcc3b814de94796a5e736d4029efb0ee900c12e2d54c993ad1a1e07"
 name = "emulator"
 version = "0.1.0"
 dependencies = [
+ "bitmatch",
  "common",
 ]
 

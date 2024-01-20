@@ -1,6 +1,7 @@
 mod alu;
 mod memory;
 mod register;
+mod instruction;
 
 use crate::computer::alu::ArithmeticLogicUnit;
 use crate::computer::memory::readonly::ReadOnlyMemory;

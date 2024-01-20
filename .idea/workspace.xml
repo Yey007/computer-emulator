@@ -5,13 +5,11 @@
   </component>
   <component name="CargoProjects">
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
+    <cargoProject FILE="$PROJECT_DIR$/../computer-emulator/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d6596c9d-65af-4718-9856-113efb9213ac" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/assembler/src/codegen.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assembler/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/assembler/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assembler/src/parser.rs" beforeDir="false" afterPath="$PROJECT_DIR$/assembler/src/parser.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../computer-emulator/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../computer-emulator/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,41 +41,41 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Cargo.Doctest of bit_array::zeroes (line 16).executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Run assembler.executor&quot;: &quot;Debug&quot;,
-    &quot;Cargo.Run emulator.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test bit_array::tests.executor&quot;: &quot;Coverage&quot;,
-    &quot;Cargo.Test bit_array::tests::change_bits_test.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test bit_array::tests::change_bits_true_test.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test bit_array::tests::equality.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test bit_array::tests::from_to_array_test.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test bit_array::tests::get_bit_test.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test bit_array::tests::get_test.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test bit_array::tests::iterator.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test bit_array::tests::iterator_size_hint.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test bit_array::tests::map.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test bit_array::tests::set_bit_test.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test bit_array::tests::set_test.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test un::tests.executor&quot;: &quot;Debug&quot;,
-    &quot;Cargo.Test un::tests::from_primitive.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test un::tests::inequality.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test un::tests::shl.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test un::tests::to_primitive.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;language.rust.cargo.check&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Cargo.Doctest of bit_array::zeroes (line 16).executor": "Run",
+    "Cargo.Run assembler.executor": "Run",
+    "Cargo.Run emulator.executor": "Run",
+    "Cargo.Test bit_array::tests.executor": "Coverage",
+    "Cargo.Test bit_array::tests::change_bits_test.executor": "Run",
+    "Cargo.Test bit_array::tests::change_bits_true_test.executor": "Run",
+    "Cargo.Test bit_array::tests::equality.executor": "Run",
+    "Cargo.Test bit_array::tests::from_to_array_test.executor": "Run",
+    "Cargo.Test bit_array::tests::get_bit_test.executor": "Run",
+    "Cargo.Test bit_array::tests::get_test.executor": "Run",
+    "Cargo.Test bit_array::tests::iterator.executor": "Run",
+    "Cargo.Test bit_array::tests::iterator_size_hint.executor": "Run",
+    "Cargo.Test bit_array::tests::map.executor": "Run",
+    "Cargo.Test bit_array::tests::set_bit_test.executor": "Run",
+    "Cargo.Test bit_array::tests::set_test.executor": "Run",
+    "Cargo.Test un::tests.executor": "Debug",
+    "Cargo.Test un::tests::from_primitive.executor": "Run",
+    "Cargo.Test un::tests::inequality.executor": "Run",
+    "Cargo.Test un::tests::shl.executor": "Run",
+    "Cargo.Test un::tests::to_primitive.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "<unknown>",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
+    "settings.editor.selected.configurable": "preferences.keymap",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RsExternalLinterProjectSettings">
     <option name="runOnTheFly" value="true" />
   </component>
@@ -263,7 +261,10 @@
       <workItem from="1704878575528" duration="5404000" />
       <workItem from="1704913956819" duration="2669000" />
       <workItem from="1704968454794" duration="16943000" />
-      <workItem from="1705431489387" duration="780000" />
+      <workItem from="1705431489387" duration="2142000" />
+      <workItem from="1705497487530" duration="2000" />
+      <workItem from="1705597419008" duration="3000" />
+      <workItem from="1705676177951" duration="936000" />
     </task>
     <servers />
   </component>
@@ -272,6 +273,10 @@
   </component>
   <component name="UnknownFeatures">
     <option featureType="com.intellij.fileTypeFactory" implementationName="*.asm" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/mc_computer_emulator$Test_bit_array__tests.info" NAME="Test bit_array::tests Coverage Results" MODIFIED="1704635132567" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="RsCoverageRunner" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" CONTEXT_FILE_PATH="$PROJECT_DIR$" />
