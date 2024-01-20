@@ -51,15 +51,15 @@ impl<const N: usize, const M: usize> Device for Spliter<N, M>
         if combined.get_store_tick() > low_end.get_store_tick() {
             low_end.set(combined.get().change_bits(), tick);
         } else {
-            let bottom_zeroed = combined.get() & (U::<{ N + M }>::max() << (N as u128).into());
+            let bottom_zeroed = combined.get() & (U::<{ N + M }>::max() << N);
             combined.set(bottom_zeroed | low_end.get().change_bits(), tick);
         }
 
         if combined.get_store_tick() > high_end.get_store_tick() {
-            high_end.set((combined.get() >> (N as u128).into()).change_bits(), tick);
+            high_end.set((combined.get() >> N).change_bits(), tick);
         } else {
-            let top_zeroed = combined.get() & (U::<{ N + M }>::max() >> (M as u128).into());
-            let high_end_shifted = high_end.get().change_bits() << (N as u128).into();
+            let top_zeroed = combined.get() & (U::<{ N + M }>::max() >> M);
+            let high_end_shifted = high_end.get().change_bits() << N;
             combined.set(top_zeroed | high_end_shifted, tick);
         }
     }
