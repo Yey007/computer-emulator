@@ -8,28 +8,32 @@ mod codegen;
 use std::fmt::{Display, Formatter, write};
 use std::fs::File;
 use std::io::Read;
+use std::path::{Path, PathBuf};
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::parser::{ErrorTokenKind, ParseError, ParseErrorKind, Parser};
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let input_filename = &args[1];
-    let output_filename = &args[2];
-
-    let mut input_file = match File::open(input_filename) {
-        Ok(file) => file,
-        Err(err) => panic!("Could not open input file {}. Cause: {}", input_filename, err),
+    let input_filename = Path::new(args.get(1).expect("Input file is required")).to_path_buf();
+    let output_filename = match args.get(2) {
+        None => input_filename.with_extension("out"),
+        Some(f) => Path::new(f).to_path_buf()
     };
 
-    let mut output_file = match File::create(output_filename) {
+    let mut input_file = match File::open(input_filename.clone()) {
         Ok(file) => file,
-        Err(err) => panic!("Could not create output file {}. Cause: {}", output_filename, err),
+        Err(err) => panic!("Could not open input file {}. Cause: {}", input_filename.display(), err),
+    };
+
+    let mut output_file = match File::create(output_filename.clone()) {
+        Ok(file) => file,
+        Err(err) => panic!("Could not create output file {}. Cause: {}", output_filename.display(), err),
     };
 
     let mut input = String::new();
     match input_file.read_to_string(&mut input) {
         Ok(_) => (),
-        Err(err) => panic!("Could not read input file {}. Cause: {}", input_filename, err),
+        Err(err) => panic!("Could not read input file {}. Cause: {}", input_filename.display(), err),
     };
 
     let mut lexer = Lexer::new(input.as_str());
@@ -38,18 +42,18 @@ fn main() {
     let result = parser.parse();
 
     if let Err(errors) = result {
-        report_errors(input_filename, errors);
+        report_errors(&input_filename, errors);
     }
 }
 
-fn report_errors(file_name: &String, errors: Vec<ParseError>) {
+fn report_errors(file: &PathBuf, errors: Vec<ParseError>) {
     for error in errors {
         let location = error.token
             .clone()
             .map(|t| format!("{}:{}", t.location.line, t.location.col))
             .unwrap_or("eof".to_owned());
 
-        print!("Error in {file_name} at {location}: ");
+        print!("Error in {} at {}: ", file.display(), location);
 
         match error {
             ParseError { kind: ParseErrorKind::UnexpectedToken { expected_types }, token: Some(token), .. } => {
