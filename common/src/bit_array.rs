@@ -2,16 +2,22 @@ use crate::bytes_to_store_bits;
 
 /// An array storing a given number of bits `N`, indexable per bit.
 #[derive(Debug, Copy, Clone)]
-pub struct BitArray<const N: usize> where [(); bytes_to_store_bits!(N)]: Sized {
+pub struct BitArray<const N: usize>
+where
+    [(); bytes_to_store_bits!(N)]: Sized,
+{
     /// The inner array. The `N`th bit and after is junk data and may be anything.
     inner_array: [u8; bytes_to_store_bits!(N)],
 }
 
-impl<const N: usize> BitArray<N> where [(); bytes_to_store_bits!(N)]: Sized {
+impl<const N: usize> BitArray<N>
+where
+    [(); bytes_to_store_bits!(N)]: Sized,
+{
     /// Returns a `BitArray` with all bits set to zero.
     pub fn zeroes() -> Self {
         BitArray {
-            inner_array: [0u8; bytes_to_store_bits!(N)]
+            inner_array: [0u8; bytes_to_store_bits!(N)],
         }
     }
 
@@ -30,9 +36,7 @@ impl<const N: usize> BitArray<N> where [(); bytes_to_store_bits!(N)]: Sized {
     ///
     /// returns: BitArray<{ N }>
     pub fn from_array(value: [u8; bytes_to_store_bits!(N)]) -> Self {
-        BitArray {
-            inner_array: value
-        }
+        BitArray { inner_array: value }
     }
 
     /// Returns an array with the bits from this `BitArray`.
@@ -84,7 +88,9 @@ impl<const N: usize> BitArray<N> where [(); bytes_to_store_bits!(N)]: Sized {
     /// * `TO`: The new size.
     ///
     /// returns: BitArray<{ M }>
-    pub fn change_bits<const TO: usize>(self) -> BitArray<TO> where [(); bytes_to_store_bits!(TO)]: Sized
+    pub fn change_bits<const TO: usize>(self) -> BitArray<TO>
+    where
+        [(); bytes_to_store_bits!(TO)]: Sized,
     {
         let mut out = [0u8; bytes_to_store_bits!(TO)];
         if TO > N {
@@ -93,9 +99,7 @@ impl<const N: usize> BitArray<N> where [(); bytes_to_store_bits!(N)]: Sized {
             out[..].copy_from_slice(&self.inner_array[..bytes_to_store_bits!(TO)]);
         }
 
-        BitArray {
-            inner_array: out
-        }
+        BitArray { inner_array: out }
     }
 
     pub fn iter(&self) -> Iter<N> {
@@ -116,7 +120,10 @@ impl<const N: usize> BitArray<N> where [(); bytes_to_store_bits!(N)]: Sized {
     }
 }
 
-impl<const N: usize> PartialEq for BitArray<N> where [(); bytes_to_store_bits!(N)]: Sized {
+impl<const N: usize> PartialEq for BitArray<N>
+where
+    [(); bytes_to_store_bits!(N)]: Sized,
+{
     fn eq(&self, other: &Self) -> bool {
         for i in 0..N {
             if self.get(i) != other.get(i) {
@@ -129,14 +136,20 @@ impl<const N: usize> PartialEq for BitArray<N> where [(); bytes_to_store_bits!(N
 
 impl<const N: usize> Eq for BitArray<N> where [(); bytes_to_store_bits!(N)]: Sized {}
 
-pub struct Iter<'a, const N: usize> where [(); bytes_to_store_bits!(N)]: Sized {
+pub struct Iter<'a, const N: usize>
+where
+    [(); bytes_to_store_bits!(N)]: Sized,
+{
     forward_index: usize,
     backward_index: usize,
     backward_limit_reached: bool,
     array: &'a BitArray<N>,
 }
 
-impl<const N: usize> Iterator for Iter<'_, N> where [(); bytes_to_store_bits!(N)]: Sized {
+impl<const N: usize> Iterator for Iter<'_, N>
+where
+    [(); bytes_to_store_bits!(N)]: Sized,
+{
     type Item = bool;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -159,7 +172,10 @@ impl<const N: usize> Iterator for Iter<'_, N> where [(); bytes_to_store_bits!(N)
     }
 }
 
-impl<const N: usize> DoubleEndedIterator for Iter<'_, N> where [(); bytes_to_store_bits!(N)]: Sized {
+impl<const N: usize> DoubleEndedIterator for Iter<'_, N>
+where
+    [(); bytes_to_store_bits!(N)]: Sized,
+{
     fn next_back(&mut self) -> Option<Self::Item> {
         if self.backward_index < self.forward_index || self.backward_limit_reached {
             return None;
@@ -169,7 +185,7 @@ impl<const N: usize> DoubleEndedIterator for Iter<'_, N> where [(); bytes_to_sto
         let option = self.backward_index.checked_sub(1);
         match option {
             Some(v) => self.backward_index = v,
-            None => self.backward_limit_reached = true
+            None => self.backward_limit_reached = true,
         }
 
         result
@@ -225,7 +241,9 @@ fn set_bit(value: u8, bit: u8, high: bool) -> u8 {
 /// * `array`: The array to truncate or extend.
 ///
 /// returns: [u8; bytes_to_store_bits!(N)]
-fn change_bits_true<const FROM: usize, const TO: usize>(array: [u8; bytes_to_store_bits!(FROM)]) -> [u8; bytes_to_store_bits!(TO)] {
+fn change_bits_true<const FROM: usize, const TO: usize>(
+    array: [u8; bytes_to_store_bits!(FROM)],
+) -> [u8; bytes_to_store_bits!(TO)] {
     // Make right length result array
     let mut out = [0u8; bytes_to_store_bits!(TO)];
     if TO > FROM {
@@ -366,10 +384,16 @@ mod tests {
         let a = BitArray::<12>::from_array([0b00101110u8, 0b00001000u8]);
 
         let forward: Vec<bool> = a.iter().collect();
-        assert_eq!(forward, vec![false, true, true, true, false, true, false, false, false, false, false, true]);
+        assert_eq!(
+            forward,
+            vec![false, true, true, true, false, true, false, false, false, false, false, true]
+        );
 
         let backward: Vec<bool> = a.iter().rev().collect();
-        assert_eq!(backward, vec![true, false, false, false, false, false, true, false, true, true, true, false]);
+        assert_eq!(
+            backward,
+            vec![true, false, false, false, false, false, true, false, true, true, true, false]
+        );
 
         let mut in_the_middle = a.iter();
 

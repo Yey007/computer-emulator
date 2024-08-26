@@ -1,20 +1,20 @@
 mod alu;
+mod instruction;
 mod memory;
 mod register;
-mod instruction;
 
 use crate::computer::alu::ArithmeticLogicUnit;
+use crate::computer::instruction::decode_instruction;
 use crate::computer::memory::readonly::ReadOnlyMemory;
 use crate::computer::memory::readwrite::ReadWriteMemory;
-use crate::device::connectable::device_port::DevicePort;
 use crate::computer::register::Register;
-use std::borrow::{BorrowMut};
 use crate::device::connectable::device_pin::DevicePin;
+use crate::device::connectable::device_port::DevicePort;
 use crate::device::Device;
-use common::instruction::{Instruction};
 use common::architecture::*;
+use common::instruction::Instruction;
 use common::un::U;
-use crate::computer::instruction::decode_instruction;
+use std::borrow::BorrowMut;
 
 pub struct Computer {
     alu: ArithmeticLogicUnit,
@@ -72,10 +72,13 @@ impl Computer {
                 DevicePort::new(),
                 DevicePort::new(),
                 DevicePort::new(),
-                DevicePort::new()
+                DevicePort::new(),
             ],
             pins: [
-                DevicePin::new(), DevicePin::new(), DevicePin::new(), DevicePin::new(),
+                DevicePin::new(),
+                DevicePin::new(),
+                DevicePin::new(),
+                DevicePin::new(),
             ],
             program_memory: ReadOnlyMemory::with_values(program),
             working_memory: ReadWriteMemory::new(),
@@ -187,7 +190,8 @@ impl Computer {
             Instruction::RSF => self.status_flag = false,
             Instruction::SSJ => self.subroutine_jump_flag = true,
             Instruction::RSJ => self.subroutine_jump_flag = false,
-            Instruction::RET => self.program_counter.store(self.subroutine_ret_addr)
+            Instruction::RET => self.program_counter.store(self.subroutine_ret_addr),
+            _ => panic!("Instruction not implemented."),
         }
     }
 

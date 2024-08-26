@@ -1,0 +1,28 @@
+STR 001000rr register_id
+LOD 001001rr register_id
+LDI 11rrxxxx register_id immediate
+INC 001010rr register_id
+DEC 001011rr register_id
+MOV 0100rrkk register_from_id register_to_id
+INP 011100pp port_id
+OUT 011101pp port_id
+SEP 011111qq pin_id
+RSP 011110qq pin_id
+ADD 010100rr register_id
+SUB 010101rr register_id
+BOR 010110rr register_id
+AND 010111rr register_id
+NOT 00000100
+SHR 00000101
+SHL 00000110
+GRT 011000rr register_id
+LES 011001rr register_id
+CMP 011010rr register_id
+BRN 10xxxxxx immediate
+LPB 0001xxxx immediate
+SSJ 00000001
+RSJ 00000111
+RET 00001000
+SSF 00000011
+RSF 00000010
+NOP 00000000

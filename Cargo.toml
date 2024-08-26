@@ -1,3 +1,3 @@
 [workspace]
-members = ["emulator", "common", "assembler"]
+members = ["emulator", "common", "assembler", "instruction_set_gen"]
 resolver = "2"

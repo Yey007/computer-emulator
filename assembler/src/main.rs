@@ -1,15 +1,17 @@
 #![feature(if_let_guard)]
+#![feature(stmt_expr_attributes)]
+#![feature(proc_macro_hygiene)]
 
 mod lexer;
 mod location;
 mod parser;
 mod codegen;
 
-use std::fmt::{Display, Formatter, write};
+use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
-use crate::lexer::{Lexer, Token, TokenKind};
+use crate::lexer::{Lexer, TokenKind};
 use crate::parser::{ErrorTokenKind, ParseError, ParseErrorKind, Parser};
 
 fn main() {
