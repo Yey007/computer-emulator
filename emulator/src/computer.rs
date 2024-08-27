@@ -1,10 +1,8 @@
 mod alu;
-mod instruction;
 mod memory;
 mod register;
 
 use crate::computer::alu::ArithmeticLogicUnit;
-use crate::computer::instruction::decode_instruction;
 use crate::computer::memory::readonly::ReadOnlyMemory;
 use crate::computer::memory::readwrite::ReadWriteMemory;
 use crate::computer::register::Register;
@@ -12,7 +10,7 @@ use crate::device::connectable::device_pin::DevicePin;
 use crate::device::connectable::device_port::DevicePort;
 use crate::device::Device;
 use common::architecture::*;
-use common::instruction::Instruction;
+use common::instruction::{decode_instruction, Instruction};
 use common::un::U;
 use std::borrow::BorrowMut;
 

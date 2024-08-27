@@ -25,10 +25,14 @@ pub fn make_instructions(_item: TokenStream) -> TokenStream {
         .expect("instruction definitions missing");
     let parsed = parse_defs(defs.as_str());
     let enum_def = gen_enum(&parsed);
-    enum_def
+    let encode = gen_encode(&parsed);
+    let decode = gen_decode(&parsed);
+
+    let output = format!("{}\n{}\n{}", enum_def, encode, decode);
+    return output.parse().unwrap();
 }
 
-fn gen_enum(parsed: &Vec<InstrDef>) -> TokenStream {
+fn gen_enum(parsed: &Vec<InstrDef>) -> String {
     let mut enum_str = "#[derive(PartialEq, Debug)] pub enum Instruction {".to_string();
     for def in parsed {
         enum_str.push_str(def.name);
@@ -48,7 +52,74 @@ fn gen_enum(parsed: &Vec<InstrDef>) -> TokenStream {
         enum_str.push_str("},");
     }
     enum_str.push_str("}");
-    enum_str.parse().unwrap()
+    enum_str
+}
+
+fn gen_encode(parsed: &Vec<InstrDef>) -> String {
+    let mut encode_str =
+        "#[bitmatch] pub fn encode_instruction(inst: Instruction) -> u8 {".to_string();
+    encode_str.push_str("match inst {");
+    for def in parsed {
+        encode_str.push_str("Instruction::");
+        encode_str.push_str(def.name);
+
+        if !def.fields.is_empty() {
+            encode_str.push_str(" { ");
+            for field in &def.fields {
+                encode_str.push_str(field.name);
+                encode_str.push_str(", ");
+            }
+            encode_str.push_str("}");
+        }
+
+        encode_str.push_str(" => {");
+        for field in &def.fields {
+            encode_str.push_str("let ");
+            encode_str.push(field.symbol);
+            encode_str.push_str(":u8 = ");
+            encode_str.push_str(field.name);
+            encode_str.push_str(".into();");
+        }
+        encode_str.push_str("bitpack!(\"");
+        encode_str.push_str(def.pattern);
+        encode_str.push_str("\")");
+        encode_str.push_str("},");
+    }
+    encode_str.push_str("}");
+    encode_str.push_str("}");
+    encode_str
+}
+
+fn gen_decode(parsed: &Vec<InstrDef>) -> String {
+    let mut decode_str =
+        "#[bitmatch] pub fn decode_instruction(inst: U<INSTRUCTION_BITS>) -> Instruction {"
+            .to_string();
+    decode_str.push_str("let converted: u8 = inst.into();");
+    decode_str.push_str("#[bitmatch] match converted {");
+    for def in parsed {
+        // decode_str.push_str("_ => Instruction::NOP,");
+
+        decode_str.push('"');
+        decode_str.push_str(def.pattern);
+        decode_str.push_str("\" => Instruction::");
+        decode_str.push_str(def.name);
+
+        if !def.fields.is_empty() {
+            decode_str.push_str(" { ");
+            for field in &def.fields {
+                decode_str.push_str(field.name);
+                decode_str.push_str(": ");
+                decode_str.push(field.symbol);
+                decode_str.push_str(".into(),");
+            }
+            decode_str.push('}');
+        }
+        decode_str.push(',');
+    }
+    decode_str.push_str("_ => Instruction::NOP,");
+    decode_str.push_str("}");
+    decode_str.push_str("}");
+    decode_str
 }
 
 fn parse_defs(defs: &str) -> Vec<InstrDef> {

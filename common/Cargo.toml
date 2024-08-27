@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 instruction_set_gen = { path = "../instruction_set_gen" }
+bitmatch = "0.1.1"
